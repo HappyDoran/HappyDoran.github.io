@@ -1,0 +1,65 @@
+---
+import { getCollection, render } from "astro:content";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { base, formatDate, isDifferentDay, pathFor, sortPosts } from "../../lib/blog";
+
+export async function getStaticPaths() {
+  const posts = sortPosts(await getCollection("blog"));
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { allPosts: posts, post },
+  }));
+}
+
+const { allPosts, post } = Astro.props;
+const { Content, headings } = await render(post);
+const sectionHeadings = headings.filter((heading) => heading.depth === 2);
+const categoryPosts = allPosts.filter((candidate) => candidate.data.categorySlug === post.data.categorySlug);
+const currentIndex = categoryPosts.findIndex((candidate) => candidate.id === post.id);
+const previousPost = currentIndex > 0 ? categoryPosts[currentIndex - 1] : undefined;
+const nextPost = currentIndex < categoryPosts.length - 1 ? categoryPosts[currentIndex + 1] : undefined;
+---
+<BaseLayout description={post.data.description} title={post.data.title}>
+  <Breadcrumbs items={[
+    { href: base, label: "홈" },
+    { href: pathFor("categories/" + post.data.categorySlug + "/"), label: post.data.category },
+    { label: post.data.title },
+  ]} />
+  <article>
+    <header class="post-header">
+      <a class="category-link" href={pathFor("categories/" + post.data.categorySlug + "/")}>{post.data.category}</a>
+      <h1>{post.data.title}</h1>
+      {post.data.description && <p class="post-description">{post.data.description}</p>}
+      <div class="post-meta">
+        <span>게시 <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time></span>
+        {isDifferentDay(post.data.publishedAt, post.data.updatedAt) && (
+          <span>수정 <time datetime={post.data.updatedAt.toISOString()}>{formatDate(post.data.updatedAt)}</time></span>
+        )}
+      </div>
+      {post.data.tags.length > 0 && (
+        <ul class="tag-list" aria-label="태그">
+          {post.data.tags.map((tag) => <li>#{tag}</li>)}
+        </ul>
+      )}
+    </header>
+    <div class:list={["article-layout", sectionHeadings.length >= 3 ? "with-toc" : "without-toc"]}>
+      {sectionHeadings.length >= 3 && (
+        <nav class="post-toc" aria-labelledby="toc-title">
+          <h2 id="toc-title">목차</h2>
+          <ol>{sectionHeadings.map((heading) => <li><a href={"#" + heading.slug}>{heading.text}</a></li>)}</ol>
+        </nav>
+      )}
+      <div class="article-main">
+        <div class="post-body"><Content /></div>
+        {(previousPost !== undefined || nextPost !== undefined) && (
+          <nav class="post-navigation" aria-label="같은 카테고리의 이전 및 다음 글">
+            <div>{previousPost && <a href={pathFor("posts/" + previousPost.id + "/")}>← 이전 글<br /><strong>{previousPost.data.title}</strong></a>}</div>
+            <div class="next">{nextPost && <a href={pathFor("posts/" + nextPost.id + "/")}>다음 글 →<br /><strong>{nextPost.data.title}</strong></a>}</div>
+          </nav>
+        )}
+        <p class="home-link"><a href={base}>홈으로</a></p>
+      </div>
+    </div>
+  </article>
+</BaseLayout>

@@ -1,0 +1,64 @@
+---
+import { getCollection } from "astro:content";
+import PostCard from "../components/PostCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { categoriesFor, pathFor, sortPosts } from "../lib/blog";
+
+const posts = sortPosts(await getCollection("blog"));
+const latestPosts = posts.slice(0, 12);
+const categories = categoriesFor(posts);
+const siteOwner = "HappyDoran";
+---
+<BaseLayout title="홈">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">{siteOwner} · Developer journal</p>
+      <h1>배운 것을 기록하고, <span>만든 것을 나눕니다.</span></h1>
+    </div>
+    <div class="hero-copy">
+      <p>개발하면서 마주친 문제와 해결 과정, 오래 기억하고 싶은 배움을 차분히 쌓아갑니다.</p>
+      <div class="hero-actions">
+        <a class="button-link" href={pathFor("posts/")}>글 둘러보기</a>
+        <a class="button-link secondary" href={pathFor("categories/")}>주제로 찾기</a>
+      </div>
+      <dl class="hero-stats" aria-label="블로그 통계">
+        <div><dt>Posts</dt><dd>{posts.length}</dd></div>
+        <div><dt>Topics</dt><dd>{categories.length}</dd></div>
+      </dl>
+    </div>
+  </section>
+  {posts.length === 0 ? (
+    <section class="empty-state" aria-labelledby="empty-title">
+      <h2 id="empty-title">아직 게시된 글이 없습니다</h2>
+      <p>새 글이 게시되면 이곳에 표시됩니다.</p>
+    </section>
+  ) : (
+    <>
+      <section aria-labelledby="latest-posts-title">
+        <div class="section-heading">
+          <h2 id="latest-posts-title">최신 글</h2>
+          <a href={pathFor("posts/")}>전체 글 보기</a>
+        </div>
+        <div class="post-grid">
+          {latestPosts.map((post) => <PostCard headingLevel="h3" post={post} />)}
+        </div>
+      </section>
+      <section class="category-section" aria-labelledby="categories-title">
+        <div class="section-heading">
+          <h2 id="categories-title">주제</h2>
+          <a href={pathFor("categories/")}>모든 주제 보기</a>
+        </div>
+        <ul class="category-list">
+          {categories.map((category) => (
+            <li>
+              <a href={pathFor("categories/" + category.slug + "/")}>
+                <span>{category.name}</span>
+                <span class="muted">글 {category.count}개</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
+  )}
+</BaseLayout>

@@ -1,0 +1,33 @@
+---
+import { getCollection } from "astro:content";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { base, categoriesFor, pathFor } from "../../lib/blog";
+
+const categories = categoriesFor(await getCollection("blog"));
+---
+<BaseLayout description="게시된 글을 주제별로 찾아봅니다." title="주제">
+  <Breadcrumbs items={[{ href: base, label: "홈" }, { label: "주제" }]} />
+  <header class="page-intro">
+    <p class="eyebrow">Topics</p>
+    <h1>주제</h1>
+    <p class="muted">큰 주제별로 글을 둘러보세요.</p>
+  </header>
+  {categories.length === 0 ? (
+    <section class="empty-state" aria-labelledby="empty-title">
+      <h2 id="empty-title">아직 주제가 없습니다</h2>
+      <p>글이 게시되면 주제가 이곳에 표시됩니다.</p>
+    </section>
+  ) : (
+    <ul class="category-list">
+      {categories.map((category) => (
+        <li>
+          <a href={pathFor("categories/" + category.slug + "/")}>
+            <span>{category.name}</span>
+            <span class="muted">글 {category.count}개</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</BaseLayout>

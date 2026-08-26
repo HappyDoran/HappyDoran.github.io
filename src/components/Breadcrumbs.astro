@@ -1,0 +1,26 @@
+---
+interface BreadcrumbItem {
+  href?: string;
+  label: string;
+}
+
+interface Props {
+  items: readonly BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+---
+<nav class="breadcrumbs" aria-label="현재 위치">
+  <ol>
+    {items.map((item, index) => (
+      <li>
+        {item.href === undefined ? (
+          <span aria-current="page">{item.label}</span>
+        ) : (
+          <a href={item.href}>{item.label}</a>
+        )}
+        {index < items.length - 1 && <span aria-hidden="true">/</span>}
+      </li>
+    ))}
+  </ol>
+</nav>

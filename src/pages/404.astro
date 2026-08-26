@@ -1,0 +1,22 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { base, pathFor, sortPosts } from "../lib/blog";
+
+const latestPosts = sortPosts(await getCollection("blog")).slice(0, 3);
+---
+<BaseLayout description="요청한 페이지를 찾을 수 없습니다." title="페이지를 찾을 수 없습니다">
+  <section class="empty-state" aria-labelledby="not-found-title">
+    <h1 id="not-found-title">페이지를 찾을 수 없습니다</h1>
+    <p>주소가 바뀌었거나 글이 없습니다.</p>
+    <p><a href={base}>홈으로 돌아가기</a></p>
+  </section>
+  {latestPosts.length > 0 && (
+    <section class="category-section" aria-labelledby="latest-title">
+      <h2 id="latest-title">최신 글</h2>
+      <ul>
+        {latestPosts.map((post) => <li><a href={pathFor("posts/" + post.id + "/")}>{post.data.title}</a></li>)}
+      </ul>
+    </section>
+  )}
+</BaseLayout>

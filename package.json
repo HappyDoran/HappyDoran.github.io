@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "astro": "7.1.1"
+  },
+  "name": "notion-kanban-blog-site",
+  "packageManager": "pnpm@11.15.0",
+  "private": true,
+  "scripts": {
+    "build": "astro build"
+  },
+  "type": "module"
+}
