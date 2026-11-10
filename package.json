@@ -2,7 +2,7 @@
   "dependencies": {
     "astro": "7.1.1"
   },
-  "name": "notion-kanban-blog-site",
+  "name": "kanban-press-site",
   "packageManager": "pnpm@11.15.0",
   "private": true,
   "scripts": {

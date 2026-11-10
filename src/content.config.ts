@@ -32,6 +32,7 @@ const v2 = z
       .min(1)
       .max(120)
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    manuscriptPages: z.number().int().positive().optional(),
     pinned: z.boolean().default(false),
     schemaVersion: z.literal(2),
     series: z.string().trim().min(1).max(80).optional(),
