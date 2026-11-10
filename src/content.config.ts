@@ -17,6 +17,7 @@ const v1 = z
     ...post,
     category: "미분류",
     categorySlug: "uncategorized",
+    pinned: false,
     schemaVersion: 1 as const,
     tags: [] as string[],
   }));
@@ -31,7 +32,16 @@ const v2 = z
       .min(1)
       .max(120)
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    pinned: z.boolean().default(false),
     schemaVersion: z.literal(2),
+    series: z.string().trim().min(1).max(80).optional(),
+    seriesOrder: z.number().finite().optional(),
+    seriesSlug: z
+      .string()
+      .min(1)
+      .max(120)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+      .optional(),
     tags: z
       .array(tag)
       .max(10)

@@ -12,8 +12,8 @@ const latestPosts = sortPosts(await getCollection("blog")).slice(0, 3);
     <p><a href={base}>홈으로 돌아가기</a></p>
   </section>
   {latestPosts.length > 0 && (
-    <section class="category-section" aria-labelledby="latest-title">
-      <h2 id="latest-title">최신 글</h2>
+    <section aria-labelledby="latest-title">
+      <div class="section-heading"><h2 id="latest-title">최신 글</h2></div>
       <ul>
         {latestPosts.map((post) => <li><a href={pathFor("posts/" + post.id + "/")}>{post.data.title}</a></li>)}
       </ul>

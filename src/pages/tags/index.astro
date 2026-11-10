@@ -1,0 +1,32 @@
+---
+import { getCollection } from "astro:content";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { base, pathFor, tagsFor } from "../../lib/blog";
+
+const tags = tagsFor(await getCollection("blog"));
+---
+<BaseLayout description="게시된 글의 태그를 모아 봅니다." title="태그">
+  <Breadcrumbs items={[{ href: base, label: "홈" }, { label: "태그" }]} />
+  <header class="page-intro">
+    <h1>태그</h1>
+    <p class="muted">태그 {tags.length}개</p>
+  </header>
+  {tags.length === 0 ? (
+    <section class="empty-state" aria-labelledby="empty-title">
+      <h2 id="empty-title">아직 태그가 없습니다</h2>
+      <p>Notion의 Blog Tags 속성을 채워 게시하면 이곳에 표시됩니다.</p>
+    </section>
+  ) : (
+    <ul class="category-list">
+      {tags.map((tag) => (
+        <li>
+          <a href={pathFor("tags/" + tag.slug + "/")}>
+            <span>#{tag.name}</span>
+            <span class="muted">{tag.count}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</BaseLayout>

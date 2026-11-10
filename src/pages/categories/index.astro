@@ -9,9 +9,8 @@ const categories = categoriesFor(await getCollection("blog"));
 <BaseLayout description="게시된 글을 주제별로 찾아봅니다." title="주제">
   <Breadcrumbs items={[{ href: base, label: "홈" }, { label: "주제" }]} />
   <header class="page-intro">
-    <p class="eyebrow">Topics</p>
     <h1>주제</h1>
-    <p class="muted">큰 주제별로 글을 둘러보세요.</p>
+    <p class="muted">주제 {categories.length}개 · <a href={pathFor("tags/")}>태그 전체 보기</a></p>
   </header>
   {categories.length === 0 ? (
     <section class="empty-state" aria-labelledby="empty-title">
@@ -24,7 +23,7 @@ const categories = categoriesFor(await getCollection("blog"));
         <li>
           <a href={pathFor("categories/" + category.slug + "/")}>
             <span>{category.name}</span>
-            <span class="muted">글 {category.count}개</span>
+            <span class="muted">{category.count}</span>
           </a>
         </li>
       ))}

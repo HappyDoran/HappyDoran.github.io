@@ -3,16 +3,15 @@ import { getCollection } from "astro:content";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import PostCard from "../../components/PostCard.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { base, sortPosts } from "../../lib/blog";
+import { base, pathFor, sortPosts } from "../../lib/blog";
 
 const posts = sortPosts(await getCollection("blog"));
 ---
 <BaseLayout description="게시된 모든 글을 최신순으로 봅니다." title="전체 글">
   <Breadcrumbs items={[{ href: base, label: "홈" }, { label: "전체 글" }]} />
   <header class="page-intro">
-    <p class="eyebrow">Archive</p>
     <h1>전체 글</h1>
-    <p class="muted">글 {posts.length}개 · 최신순</p>
+    <p class="muted">글 {posts.length}개 · 최신순 · <a href={pathFor("archive/")}>연·월 보관함</a></p>
   </header>
   {posts.length === 0 ? (
     <section class="empty-state" aria-labelledby="empty-title">

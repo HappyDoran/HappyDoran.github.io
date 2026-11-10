@@ -1,0 +1,35 @@
+---
+import { getCollection } from "astro:content";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { archiveFor, base, formatDate, pathFor } from "../lib/blog";
+
+const months = archiveFor(await getCollection("blog"));
+---
+<BaseLayout description="게시된 글을 연·월별로 봅니다." title="보관함">
+  <Breadcrumbs items={[{ href: base, label: "홈" }, { label: "보관함" }]} />
+  <header class="page-intro">
+    <h1>보관함</h1>
+    <p class="muted">게시일 기준 연·월별 글</p>
+  </header>
+  {months.length === 0 ? (
+    <section class="empty-state" aria-labelledby="empty-title">
+      <h2 id="empty-title">아직 게시된 글이 없습니다</h2>
+      <p>새 글이 게시되면 이곳에 표시됩니다.</p>
+    </section>
+  ) : (
+    months.map((month) => (
+      <section class="archive-month" aria-labelledby={"month-" + month.month}>
+        <h2 id={"month-" + month.month}>{month.label} <span class="muted">{month.posts.length}</span></h2>
+        <ul class="archive-list">
+          {month.posts.map((post) => (
+            <li>
+              <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
+              <a href={pathFor("posts/" + post.id + "/")}>{post.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  )}
+</BaseLayout>

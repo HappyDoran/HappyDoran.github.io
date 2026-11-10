@@ -2,30 +2,27 @@
 import { getCollection } from "astro:content";
 import PostCard from "../components/PostCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { categoriesFor, pathFor, sortPosts } from "../lib/blog";
+import { categoriesFor, pathFor, site, sortPosts } from "../lib/blog";
 
 const posts = sortPosts(await getCollection("blog"));
-const latestPosts = posts.slice(0, 12);
+// 고정 글(R10)은 최신 글 위에 따로 두고 최신 글에서는 뺀다.
+const pinnedPosts = posts.filter((post) => post.data.pinned);
+const latestPosts = posts.filter((post) => !post.data.pinned).slice(0, 12);
 const categories = categoriesFor(posts);
-const siteOwner = "HappyDoran";
 ---
-<BaseLayout title="홈">
-  <section class="hero">
-    <div>
-      <p class="eyebrow">{siteOwner} · Developer journal</p>
-      <h1>배운 것을 기록하고, <span>만든 것을 나눕니다.</span></h1>
-    </div>
-    <div class="hero-copy">
-      <p>개발하면서 마주친 문제와 해결 과정, 오래 기억하고 싶은 배움을 차분히 쌓아갑니다.</p>
-      <div class="hero-actions">
-        <a class="button-link" href={pathFor("posts/")}>글 둘러보기</a>
-        <a class="button-link secondary" href={pathFor("categories/")}>주제로 찾기</a>
-      </div>
-      <dl class="hero-stats" aria-label="블로그 통계">
-        <div><dt>Posts</dt><dd>{posts.length}</dd></div>
-        <div><dt>Topics</dt><dd>{categories.length}</dd></div>
-      </dl>
-    </div>
+<BaseLayout title="홈" description={site.description || undefined}>
+  <section class="hero" aria-labelledby="site-title">
+    <h1 id="site-title">{site.title}</h1>
+    {site.description && <p>{site.description}</p>}
+    {site.links.length > 0 && (
+      <ul class="hero-links" aria-label="프로필 링크">
+        {site.links.map((link) => <li><a href={link.url} rel="me">{link.label}</a></li>)}
+      </ul>
+    )}
+    <dl class="hero-stats" aria-label="블로그 통계">
+      <div><dt>글</dt><dd>{posts.length}</dd></div>
+      <div><dt>주제</dt><dd>{categories.length}</dd></div>
+    </dl>
   </section>
   {posts.length === 0 ? (
     <section class="empty-state" aria-labelledby="empty-title">
@@ -34,6 +31,16 @@ const siteOwner = "HappyDoran";
     </section>
   ) : (
     <>
+      {pinnedPosts.length > 0 && (
+        <section aria-labelledby="pinned-posts-title">
+          <div class="section-heading">
+            <h2 id="pinned-posts-title">고정 글</h2>
+          </div>
+          <div class="post-grid">
+            {pinnedPosts.map((post) => <PostCard headingLevel="h3" post={post} />)}
+          </div>
+        </section>
+      )}
       <section aria-labelledby="latest-posts-title">
         <div class="section-heading">
           <h2 id="latest-posts-title">최신 글</h2>
@@ -43,17 +50,16 @@ const siteOwner = "HappyDoran";
           {latestPosts.map((post) => <PostCard headingLevel="h3" post={post} />)}
         </div>
       </section>
-      <section class="category-section" aria-labelledby="categories-title">
+      <section aria-labelledby="categories-title">
         <div class="section-heading">
           <h2 id="categories-title">주제</h2>
-          <a href={pathFor("categories/")}>모든 주제 보기</a>
         </div>
         <ul class="category-list">
           {categories.map((category) => (
             <li>
               <a href={pathFor("categories/" + category.slug + "/")}>
                 <span>{category.name}</span>
-                <span class="muted">글 {category.count}개</span>
+                <span class="muted">{category.count}</span>
               </a>
             </li>
           ))}
