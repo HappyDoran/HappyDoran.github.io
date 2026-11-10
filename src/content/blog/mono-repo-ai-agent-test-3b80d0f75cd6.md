@@ -1,12 +1,12 @@
 ---
 schemaVersion: 2
-title: "Mono-repo에 AI Agent 작업 지원 체계 구축하기"
+title: "Mono-repo에 AI Agent 작업 지원 체계 구축하기test"
 description: "목적과 범위"
 category: "미분류"
 categorySlug: "uncategorized"
 tags: []
 publishedAt: "2026-08-10T14:28:00.000Z"
-updatedAt: "2026-11-01T03:52:00.000Z"
+updatedAt: "2026-11-10T05:50:00.000Z"
 ---
 
 ### 목적과 범위
