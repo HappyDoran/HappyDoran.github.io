@@ -2,10 +2,10 @@
 schemaVersion: 2
 title: "StackFlow 기반 WebView 내비게이션 설계"
 description: "WebView 애플리케이션에서 StackFlow로 화면 stack을 구성한 방식을 정리한다. Activity 등록과 타입 계약, URL 동기화와 deep link 복원, 공용 화면 셸, navigation lock, 네이티브 hardware back 연동을 현재 코드 기준으로 다룬다."
-tags: ["React", "Next.js", "아키텍처", "상태 관리"]
+tags: ["React", "Next.js", "아키텍처", "상태 관리", "CSS"]
 publishedAt: "2026-08-03T09:18:00.000Z"
-updatedAt: "2026-11-10T15:32:00.000Z"
-manuscriptPages: 35
+updatedAt: "2026-11-11T14:17:00.000Z"
+manuscriptPages: 40
 ---
 
 ### 문서 목적
@@ -235,7 +235,13 @@ root 탭에서 시트나 메뉴가 열려 있으면 ` blockNavigation `이 ` can
 
 전환 시간은 ` STACK_TRANSITION_DURATION_MS `\(350ms\) 하나를 StackFlow 설정과 lock fallback이 공유한다\. push·pop 곡선은 swipe\-back과 같은 임계 감쇠 스프링을 정지 상태에서 출발시킨 모양을 CSS ` linear() `로 옮긴 값이다\. ` linear() `를 지원하지 않는 WebView\(iOS 17\.2 미만 등\)는 같은 스프링에 맞춘 ` cubic-bezier ` 근사를 쓴다\.
 
-iOS WKWebView는 기본적으로 60fps에 묶여 있어 ProMotion 기기에서 전환이 덜 부드러웠다\. WebView 라이브러리를 pnpm patch로 수정해 120Hz로 그리게 했다\.
+iOS WKWebView는 ProMotion 기기에서도 기본적으로 60fps에 묶여 있어 WebView 라이브러리에 pnpm patch를 적용했다\. ` UIScreen.mainScreen.maximumFramesPerSecond > 60 `인 경우에만 비공개 설정 ` PreferPageRenderingUpdatesNear60FPSEnabled `를 끈다\. 60Hz 기기에서는 이 설정을 끄면 30fps로 떨어져 적용하지 않는다\. ` CADisableMinimumFrameDurationOnPhone `도 함께 필요하다\. 0\.2\.2에서는 swipe의 손을 뗀 뒤 마무리도 버튼 pop과 같은 CSS 전환을 쓴다\.
+
+#### 일반 브라우저의 즉시 전환
+
+` app/layout.tsx `가 첫 페인트 전에 ` <html data-{prefix}-runtime="browser|app"> `를 설정하고 ` NativeBridgeSync `가 hydration 뒤에도 표시를 복구한다\. 일반 브라우저에서는 CSS로 슬라이드·dim·swipe edge를 끄며, 앱의 ` useStackNavigation `도 ` push `·` replace `·` pop `·` popTo `에 ` animate: false `를 전달한다\. CSS만 숨기면 보이지 않는 전환 동안 lock이 남아 다음 클릭을 삼키므로 action 자체를 바꾼다\. AppBar의 back·close도 이 앱 hook을 쓴다\.
+
+개발용 가짜 native는 브리지를 흉내 내지만 화면 전환 정책은 일반 브라우저다\. 다만 가짜 hardware back은 kit 내부 pop을 지나므로 직후 약 270ms 동안 이동이 무시되는 개발 서버 한계가 기록되어 있다\(` cf88d7c `\)\.
 
 ### 11\. Activity 추가 체크리스트
 
@@ -265,3 +271,7 @@ iOS WKWebView는 기본적으로 60fps에 묶여 있어 ProMotion 기기에서 �
 - History Sync 공식 문서
 - StackFlow v1 → v2 Migration Guide
 - 관련 글: 커스텀 Swipe\-back 구현 배경 및 설계, StackFlow kit 패키지 분리 배경 및 설계
+
+### 구현 근거와 검토 범위
+
+2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/src/shared/stackflow/hooks/use-stack-navigation.ts `, ` web/src/shared/stackflow/components/stack-screen.tsx `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
