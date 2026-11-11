@@ -35,6 +35,7 @@ const searchText = (post: (typeof posts)[number]) =>
               <li><a href={pathFor("posts/?tag=" + tag.slug)} data-tag-filter={tag.slug}>#{tag.name} <span class="muted">{tag.count}</span></a></li>
             ))}
           </ul>
+          <button class="tag-more" type="button" aria-expanded="false" data-tag-more hidden></button>
         </nav>
       )}
       <p class="post-status muted" role="status" data-post-status></p>
@@ -50,9 +51,14 @@ const searchText = (post: (typeof posts)[number]) =>
   )}
 </BaseLayout>
 <script>
-  // 검색·태그 거르기·쪽 나누기(R9). JavaScript가 없으면 모든 글이 그대로 보인다.
+  // 검색·태그 거르기·쪽 나누기(R9). JavaScript가 없으면 모든 글과 모든 태그가 그대로 보인다.
   // 상태는 주소 query(q, tag, page)에 두어 새로고침·공유해도 같다.
   const PAGE_SIZE = 10;
+  // 쪽 번호는 5개씩 묶어 보이고, 태그는 글이 많은 순으로 10개만 보인 뒤 더 보기로 편다(고른 태그는 늘 보인다).
+  const PAGE_GROUP = 5;
+  const TAG_LIMIT = 10;
+  const moreTags = document.querySelector<HTMLButtonElement>("[data-tag-more]");
+  let tagsExpanded = false;
   const items = [...document.querySelectorAll<HTMLElement>("[data-post]")];
   const form = document.querySelector<HTMLFormElement>("[data-post-search]");
   const input = document.querySelector<HTMLInputElement>("#post-query");
@@ -84,9 +90,10 @@ const searchText = (post: (typeof posts)[number]) =>
     button.setAttribute("aria-label", ariaLabel);
     button.disabled = options.disabled === true;
     if (options.current === true) button.setAttribute("aria-current", "page");
+    // 화면을 옮기지 않고, 바뀐 쪽 번호에 초점을 둔다(버튼을 다시 그려 초점이 사라지지 않게).
     button.addEventListener("click", () => {
       write({ ...read(), page });
-      document.querySelector(".page-intro")?.scrollIntoView();
+      pager?.querySelector<HTMLButtonElement>('[aria-current="page"]')?.focus({ preventScroll: true });
     });
     return button;
   }
@@ -104,9 +111,19 @@ const searchText = (post: (typeof posts)[number]) =>
     const current = Math.min(page, pages);
     const shown = new Set(matched.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE));
     for (const item of items) item.hidden = !shown.has(item);
-    for (const link of tagLinks) {
-      if (link.dataset.tagFilter === tag) link.setAttribute("aria-current", "true");
+    tagLinks.forEach((link, index) => {
+      const selected = link.dataset.tagFilter === tag;
+      if (selected) link.setAttribute("aria-current", "true");
       else link.removeAttribute("aria-current");
+      // index 0은 "전체"다.
+      const item = link.closest("li");
+      if (item) item.hidden = !tagsExpanded && !selected && index > TAG_LIMIT;
+    });
+    const hiddenTags = tagLinks.length - 1 - TAG_LIMIT;
+    if (moreTags) {
+      moreTags.hidden = hiddenTags <= 0;
+      moreTags.textContent = tagsExpanded ? "태그 접기" : "태그 " + hiddenTags + "개 더 보기";
+      moreTags.setAttribute("aria-expanded", String(tagsExpanded));
     }
     if (status) {
       status.textContent =
@@ -118,16 +135,29 @@ const searchText = (post: (typeof posts)[number]) =>
       pager.replaceChildren();
       pager.hidden = pages <= 1;
       if (pages > 1) {
-        pager.append(pageButton("이전", current - 1, "이전 쪽", { disabled: current === 1 }));
-        for (let number = 1; number <= pages; number += 1) {
+        // 이전·다음은 앞뒤 묶음의 첫 쪽으로 간다(1–5 → 6–10).
+        const first = Math.floor((current - 1) / PAGE_GROUP) * PAGE_GROUP + 1;
+        const last = Math.min(first + PAGE_GROUP - 1, pages);
+        pager.append(pageButton("이전", Math.max(1, first - PAGE_GROUP), "이전 " + PAGE_GROUP + "쪽", { disabled: first === 1 }));
+        for (let number = first; number <= last; number += 1) {
           pager.append(pageButton(String(number), number, number + "쪽", { current: number === current }));
         }
-        pager.append(pageButton("다음", current + 1, "다음 쪽", { disabled: current === pages }));
+        pager.append(pageButton("다음", last + 1, "다음 " + PAGE_GROUP + "쪽", { disabled: last === pages }));
       }
     }
   }
 
   form?.addEventListener("submit", (event) => event.preventDefault());
+  moreTags?.addEventListener("click", () => {
+    tagsExpanded = !tagsExpanded;
+    render();
+  });
+  // 좁은 화면에서는 태그 줄이 옆으로 밀리므로, 주소로 고른 태그가 처음부터 보이게 그 줄만 옮긴다.
+  const selectedTag = tagLinks.find((link) => link.dataset.tagFilter !== "" && link.dataset.tagFilter === read().tag);
+  const tagRow = selectedTag?.closest("ul");
+  if (selectedTag && tagRow && tagRow.scrollWidth > tagRow.clientWidth) {
+    tagRow.scrollLeft += selectedTag.getBoundingClientRect().left - tagRow.getBoundingClientRect().left - 16;
+  }
   input?.addEventListener("input", () => write({ ...read(), page: 1, q: input.value }));
   for (const link of tagLinks) {
     link.addEventListener("click", (event) => {
