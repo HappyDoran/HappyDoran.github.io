@@ -4,8 +4,8 @@ title: "WebView 하이브리드 앱의 프론트엔드 아키텍처 전략"
 description: "React Native WebView shell과 Next.js 콘텐츠를 한 저장소에서 함께 운영하면서 적용한 아키텍처를 정리한다. 런타임 경계, 소스 의존 방향, 공통 패키지, native adapter, Native-Web bridge와 API 계약, 상태 관리, 검증 기준을 다룬다."
 tags: ["React Native", "Next.js", "아키텍처", "상태 관리"]
 publishedAt: "2026-08-03T08:49:00.000Z"
-updatedAt: "2026-11-10T15:32:00.000Z"
-manuscriptPages: 32
+updatedAt: "2026-11-11T14:17:00.000Z"
+manuscriptPages: 35
 ---
 
 ### 문서 목적
@@ -48,6 +48,12 @@ React Native WebView shell과 Next\.js 콘텐츠를 한 저장소에서 함께 �
           ▼
 [External HTTP APIs and object storage]
 ```
+
+#### 일반 브라우저와 현재 인증 진입
+
+App 밖에서도 사진 선택·MediaPipe 포즈 검출·9점 조정으로 같은 캡처 계약을 만들고, 메모리 사진을 사전서명 URL로 직접 PUT할 수 있다\. 네이티브 실시간 카메라·권한 처리는 App에 남는다\. 일반 브라우저 내비게이션은 앱 adapter가 ` animate: false `로 처리한다\.
+
+현재 CBT 비로그인 진입은 초대 코드다\. 소셜 로그인·약관 코드는 복귀용으로 유지하되 운영 홈에서는 숨긴다\. 분석 아카이빙은 대표 지정·선택 삭제를 지원하고, 비로그인 공유 페이지는 별도 서버 컴포넌트가 공개 API를 소비한다\.
 
 ### 3\. Mono\-repo 경계
 
@@ -240,3 +246,7 @@ pnpm run build
 - [ ] native module의 method, nullable 동작, result key가 두 플랫폼에서 일치하는가
 - [ ] hardware back·swipe·버튼 pop이 같은 lock 경로를 지나는가
 - [ ] 문서의 완료 상태와 실제 구현\(mock 여부, 배포 범위\)이 일치하는가
+
+### 구현 근거와 검토 범위
+
+2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/src/app/layout.tsx `, ` web/src/shared/stackflow/hooks/use-stack-navigation.ts `, ` web/src/features/auth/README.md `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
