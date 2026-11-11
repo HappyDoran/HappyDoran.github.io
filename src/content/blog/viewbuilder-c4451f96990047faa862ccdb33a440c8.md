@@ -1,0 +1,343 @@
+---
+schemaVersion: 2
+title: "ViewBuilder"
+description: "@ViewBuilder란?"
+category: "미분류"
+categorySlug: "uncategorized"
+tags: ["Swift", "SwiftUI"]
+publishedAt: "2024-08-27T07:14:00.000Z"
+updatedAt: "2026-11-10T15:31:00.000Z"
+manuscriptPages: 9
+---
+
+## @ViewBuilder란?
+
+Closure에서 뷰를 구성하는 Custom parameter attribute
+
+## @ViewBuilder Parameter
+
+```swift
+@frozen public struct VStack<Content> : View where Content : View {
+
+   
+    @inlinable public init(alignment: HorizontalAlignment = .center, spacing: CGFloat? = nil, 
+    @ViewBuilder content: () -> Content)
+
+		public typealias Body = Never
+}
+```
+
+VStack의 생성자를 보게 되면 @ViewBuilder content 파라미터가 있는 것을 볼 수 있습니다\.
+
+→ 이 @ViewBuilder라는 속성 덕분에 클로저 내에서 여러뷰를 정의하고 이를 하나의 컨텐츠로 만들어 반환할 수 있습니다\.
+
+```swift
+struct ContentView: View {
+    
+    var body: some View {
+        VStack {
+            Text("Hello")
+            Text("Doran")
+        }
+    }
+}
+```
+
+content 파라미터 자리에는 View를 구성할 수 있는 나만의 View를 만들 수 있습니다\.
+
+### Create Custom View
+
+VStack이긴 한데 매번 background color를 사용자가 정할 수 있는 Custom View를 만들어봅시다\.
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        ColorStack(color: .red){
+            Text("hello")
+            Text("Doran")
+        }
+    } 
+}
+
+struct ColorStack<Content>: View 
+where Content: View {
+    let content: () -> Content
+    let color: Color
+    
+    init(
+    color: Color, 
+    @ViewBuilder 
+    content: @escaping () -> Content) {
+        self.content = content
+        self.color = color
+    }
+    
+    var body: some View {
+        VStack{
+            content()
+        }.background(color)
+    }
+}
+
+```
+
+![](<../../assets/blog/viewbuilder-c4451f96990047faa862ccdb33a440c8/image-001.png>)
+
+**&lt;Content&gt;: View where Content: View가 무슨 소린지 모르겠네요…**
+
+제네릭 구조체로 Content라는 제네릭 타입을 사용하는 Content인데 View 프로토콜을 준수
+
+**@ViewBuilder content: @escaping \(\) \-&gt; Content 여기도 무슨 소린지 모르겠습니다\.**
+
+Content 자체를  @ViewBuilder 파라미터를 사용하여 ChildView로 만들어주는 방법이 있습니다\.
+
+→ 공통적인 Container를 만드는데 유용하게 쓸 수 있을 것 같습니다\.
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        NoInitColorStack{
+            Text("hello")
+            Text("Doran")
+        }
+        
+}
+struct NoInitColorStack<Content>: View 
+where Content: View {
+    @ViewBuilder
+    let content: Content
+    
+    var body: some View {
+        VStack{
+            content
+        }.background(.purple)
+    }
+}
+```
+
+![](<../../assets/blog/viewbuilder-c4451f96990047faa862ccdb33a440c8/image-002.png>)
+
+딱히 생성자가 필요 없다면 따로 만들지 않고 content를 @ViewBuilder로 mark해서 사용해도 된다\.
+
+## @ViewBuilder computed property, Method
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        HStack {
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+            Text("Doran")
+        }
+    }
+}
+
+```
+
+이렇게 길고, 따로 빼고 싶어 보이는 View가 있습니다\.
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        HStack {
+        }
+    }
+    
+    var manyText: some View { //Function declares an opaque return type, but has no return statements in its body from which to infer an underlying type
+        Text("Doran") //Result of 'Text' initializer is unused
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+    }
+}
+```
+
+이렇게 에러가 뜹니다\.
+
+왜 body에서는 에러가 안뜨고 manyText에서는 에러가 뜨는 걸까요?
+
+→ 그 이유는 body 안에는 암시적으로 @ViewBuilder가 선언이 되있기 때문입니다\. 그렇기 때문에 해당 코드가 돌아가기 위해서는 명시적으로 @ViewBuilder를 붙여줘야 하는거죠\.
+
+```swift
+@ViewBuilder
+    var manyText: some View {
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        Text("Doran")
+        ...
+```
+
+## ViewBuilder는 언제 사용하는 걸까?
+
+간단한 예시로 Text 뷰를 반환하는 함수가 있다고 해봅시다\.
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        view()
+    }
+    
+}
+
+extension ContentView {
+    private func view() -> some View {
+        return Text("Text")
+    }
+}
+
+
+
+
+#Preview {
+    ContentView()
+}
+
+
+```
+
+![](<../../assets/blog/viewbuilder-c4451f96990047faa862ccdb33a440c8/image-003.png>)
+
+여기에 이제 isOn 변수에 따라서 View가 다르게 보이게 해보겠습니다\.
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    @State private var isOn = true
+    var body: some View {
+        VStack{
+            Toggle("Toggle", isOn: $isOn)
+            view(isOn: isOn)
+        }
+    }
+    
+}
+
+extension ContentView {
+    private func view(isOn: Bool) -> some View { //Function declares an opaque return type 'some View', but the return statements in its body do not have matching underlying types
+        if isOn{
+            return Text("Text")
+        }
+        else {
+            return Button("hello"){}
+        }
+    }
+}
+```
+
+some View는 opaque type이고 underlying type이 1가지만 될 수 있습니다\. 
+
+하지만 view 함수 내에선 underlying type이 2가지이기 때문에 에러가 발생합니다\.
+
+→ 어쩔땐 Text, 어쩔땐 Button을 반환하기 때문이죠…
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    @State private var isOn = true
+    var body: some View {
+        VStack{
+            Toggle("Toggle", isOn: $isOn)
+            view(isOn: isOn)
+        }
+    }
+    
+}
+
+extension ContentView {
+    private func view(isOn: Bool) -> some View {
+        if isOn{
+            return AnyView(Text("Text"))
+        }
+        else {
+            return AnyView(Button("hello"){})
+        }
+    }
+}
+```
+
+AnyView로 감싸면 타입이 type\-erasing wrapper type으로 바뀌게 되며 오류가 해결되긴 하지만, 
+
+이런식으로 반환되는 모든 View를 감싸는건 코드의 가독성도 떨어지고 노가다 작업입니다\.
+
+바로 이럴 때 @ViewBuilder를 사용하게 됩니다\.
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    @State private var isOn = true
+    var body: some View {
+        VStack{
+            Toggle("Toggle", isOn: $isOn)
+            view(isOn: isOn)
+        }
+    }
+    
+}
+
+extension ContentView {
+    @ViewBuilder
+    private func view(isOn: Bool) -> some View {
+        if isOn{
+            Text("Text")
+        }
+        else {
+            Button("hello"){}
+        }
+    }
+}
+```
+
+@ViewBuilder 안에서는 return 구문을 명시적으로 호출하지 않습니다\.
+
+→ 그 이유는 @ViewBuilder는 @resultBuilder이기 떄문입니다\.
+
+ResultBuilder에 대해서 보는 것도 좋을 것 같습니다\.
+
+## 결론
+
+ViewBuilder는 해당 클로저가 여러 Child View를 제공할 수 있도록 해줍니다\.
+
+ViewBuilder는 여러 상태값에 따라서 여러 뷰를 반환하고 싶을 때 사용합니다\.
+
+## 참고
+
+<a class="notion-resource-card" href="https://zeddios.tistory.com/1324"><span class="notion-resource-label">링크</span><span>https://zeddios.tistory.com/1324</span></a>
+
+<a class="notion-resource-card" href="https://phillip5094.tistory.com/222"><span class="notion-resource-label">링크</span><span>https://phillip5094.tistory.com/222</span></a>
+
+<a class="notion-resource-card" href="https://www.youtube.com/watch?v=gUVAZMKiUY0"><span class="notion-resource-label">링크</span><span>https://www.youtube.com/watch?v=gUVAZMKiUY0</span></a>
+
+<a class="notion-resource-card" href="https://phillip5094.tistory.com/146"><span class="notion-resource-label">링크</span><span>https://phillip5094.tistory.com/146</span></a>
