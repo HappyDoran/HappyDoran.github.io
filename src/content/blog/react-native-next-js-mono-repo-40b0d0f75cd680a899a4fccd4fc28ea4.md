@@ -4,8 +4,8 @@ title: "React Native + Next.js Mono-repo 버전 관리"
 description: "이 문서에서 가장 중요한 규칙은 버전 숫자를 여러 곳에 흩어 적지 않는 것입니다. 도구 버전은 .mise.toml·packageManager, 라이브러리 버전은 catalog와 각 package.json 한 곳에서만 결정합니다."
 tags: ["React Native", "Next.js", "개발 도구"]
 publishedAt: "2026-11-01T03:52:00.000Z"
-updatedAt: "2026-11-10T15:32:00.000Z"
-manuscriptPages: 64
+updatedAt: "2026-11-11T14:17:00.000Z"
+manuscriptPages: 66
 ---
 
 > 표기: 패키지 scope는 ` @scope `, workspace 패키지 이름은 ` <app 패키지> `·` <web 패키지> `, Git 조직은 ` <org> `로 바꿔 적었습니다\.
@@ -227,7 +227,7 @@ patchedDependencies:
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">patch</th><th scope="col">이유</th></tr></thead>
-<tbody><tr><td><code>react-native-webview@13.17.0</code></td><td>WKWebView의 60fps 상한을 꺼서 ProMotion 기기에서 120Hz로 그립니다(WebKit 비공개 API <code>_features</code>·<code>_setEnabled:forFeature:</code>). StackFlow 전환 애니메이션에 필요해 유지합니다. App Store 심사(지침 2.5.1)에서 거절되면 이 블록을 지운다고 patch 주석에 적혀 있습니다</td></tr></tbody>
+<tbody><tr><td><code>react-native-webview@13.17.0</code></td><td>화면 최대 주사율이 60Hz를 넘을 때만 WKWebView의 60fps 상한을 꺼서 ProMotion 기기에서 120Hz로 그립니다. 60Hz 기기는 이 설정을 끄면 30fps로 떨어져 제외합니다(WebKit 비공개 API <code>_features</code>·<code>_setEnabled:forFeature:</code>). StackFlow 전환 애니메이션에 필요해 유지합니다. App Store 심사(지침 2.5.1)에서 거절되면 이 블록을 지운다고 patch 주석에 적혀 있습니다</td></tr></tbody>
 </table>
 </div>
 
@@ -456,3 +456,7 @@ pnpm --filter @scope/design-system run build-storybook
 pnpm audit
 pnpm outdated -r
 ```
+
+### 구현 근거와 검토 범위
+
+2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` patches/react-native-webview@13.17.0.patch `, ` pnpm-lock.yaml `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
