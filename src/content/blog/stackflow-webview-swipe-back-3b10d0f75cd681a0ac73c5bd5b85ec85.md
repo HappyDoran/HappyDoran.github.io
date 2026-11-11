@@ -1,16 +1,16 @@
 ---
 schemaVersion: 2
 title: "StackFlow 기반 WebView: 커스텀 Swipe-back 구현 배경과 설계"
-description: "WebView 화면의 swipe-back을 직접 구현한 배경과 설계를 정리한다. 제스처 판정, 스프링 물리, 패럴랙스 렌더링, navigation lock, StackFlow pop과 네이티브 hardware back의 연결 방식을 다룬다."
-tags: ["React", "아키텍처", "렌더링", "성능 최적화"]
+description: "WebView 화면의 swipe-back을 직접 구현한 배경과 설계를 정리한다. 제스처 판정, CSS 전환 마무리, 패럴랙스 렌더링, navigation lock, StackFlow pop과 네이티브 hardware back의 연결 방식을 다룬다."
+tags: ["React", "아키텍처", "렌더링", "성능 최적화", "CSS"]
 publishedAt: "2026-08-03T09:18:00.000Z"
-updatedAt: "2026-11-10T15:32:00.000Z"
-manuscriptPages: 35
+updatedAt: "2026-11-11T14:17:00.000Z"
+manuscriptPages: 36
 ---
 
 ### 문서 목적
 
-WebView 화면의 swipe\-back을 직접 구현한 배경과 설계를 정리한다\. 제스처 판정, 스프링 물리, 패럴랙스 렌더링, navigation lock, StackFlow pop과 네이티브 hardware back의 연결 방식을 다룬다\.
+WebView 화면의 swipe\-back을 직접 구현한 배경과 설계를 정리한다\. 제스처 판정, CSS 전환 마무리, 패럴랙스 렌더링, navigation lock, StackFlow pop과 네이티브 hardware back의 연결 방식을 다룬다\.
 
 이 구현은 처음에 앱 코드\(` shared/stackflow `\) 안에서 만들었고, 이후 런타임과 무관한 별도 패키지\(` stackflow-kit `\)로 분리했다\. 아래 내용은 분리된 패키지의 현재 구현 기준이다\.
 
@@ -20,7 +20,7 @@ StackFlow의 stack 상태와 action은 그대로 쓰면서 전환 동작은 세�
 
 - 손가락 이동 거리와 화면 transform을 즉시 연결하는 interactive gesture
 - 짧고 빠른 flick과 충분히 긴 drag를 모두 완료로 판정
-- 기준에 못 미친 drag는 스프링으로 원위치 복귀
+- 기준에 못 미친 drag는 같은 전환 곡선으로 원위치 복귀
 - 뒤 화면이 함께 움직이는 패럴랙스와 dim
 - swipe와 버튼 pop의 감속 모양을 같게 맞추기
 - custom 애니메이션이 끝난 뒤 StackFlow pop 애니메이션이 다시 실행되는 문제 방지
@@ -34,7 +34,7 @@ StackFlow의 stack 상태와 action은 그대로 쓰면서 전환 동작은 세�
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">파일</th><th scope="col">책임</th></tr></thead>
-<tbody><tr><td><code>hooks/use-spring-swipe-back</code></td><td>touch 추적, 완료 판정, 스프링 시뮬레이션, 패럴랙스·dim</td></tr><tr><td><code>components/stack-screen</code></td><td>gesture DOM ref, 화면 셸, pop 확정, touch 차단 overlay, 뒤 화면 위치</td></tr><tr><td><code>hooks/use-stack-navigation</code></td><td>공용 navigation action과 lock 연동</td></tr><tr><td><code>stores/nav-lock.state</code></td><td>token 기반 동기 mutex와 fallback 해제</td></tr><tr><td><code>constants/stack-transition.constant</code></td><td>전환 시간, 스프링 상수, 곡선, 패럴랙스 비율</td></tr><tr><td>앱의 StackFlow 설정</td><td>Activity, plugin, <code>transitionDuration</code></td></tr><tr><td>앱의 runtime adapter</td><td>hardware back 이벤트를 <code>StackScreen</code>에 연결</td></tr></tbody>
+<tbody><tr><td><code>hooks/use-spring-swipe-back</code></td><td>touch 추적, 완료 판정, CSS 전환 마무리, 패럴랙스·dim</td></tr><tr><td><code>components/stack-screen</code></td><td>gesture DOM ref, 화면 셸, pop 확정, touch 차단 overlay, 뒤 화면 위치</td></tr><tr><td><code>hooks/use-stack-navigation</code></td><td>공용 navigation action과 lock 연동</td></tr><tr><td><code>stores/nav-lock.state</code></td><td>token 기반 동기 mutex와 fallback 해제</td></tr><tr><td><code>constants/stack-transition.constant</code></td><td>전환 시간, 스프링 상수, 곡선, 패럴랙스 비율</td></tr><tr><td>앱의 StackFlow 설정</td><td>Activity, plugin, <code>transitionDuration</code></td></tr><tr><td>앱의 runtime adapter</td><td>hardware back 이벤트를 <code>StackScreen</code>에 연결</td></tr></tbody>
 </table>
 </div>
 
@@ -44,10 +44,10 @@ root가 아니고 ` preventSwipeBack `이 false인 화면에서만 활성화한�
 
 시작 시 다음을 확인한다\.
 
-- 확정된 swipe의 스프링이 진행 중이면 새 touch를 무시한다\. 새 touch가 확정된 pop을 취소하지 않게 하기 위해서다\.
+- 확정된 swipe의 CSS 전환이 진행 중이면 새 touch를 무시한다\. 새 touch가 확정된 pop을 취소하지 않게 하기 위해서다\.
 - 이미 제스처를 소유한 손가락이 있으면 다른 손가락은 무시한다\. ` touch.identifier `로 소유 touch를 추적한다\.
 - 다른 navigation\(버튼 pop/push\)이 lock을 잡고 있으면 제스처를 시작하지 않는다\.
-- 취소 스프링이 진행 중이면 새 제스처가 그 위치에서 이어받는다\.
+- 취소 전환이 진행 중이면 현재 화면 위치를 읽고 새 제스처가 그 위치에서 이어받는다\.
 
 ` dx `, ` dy ` 중 하나가 5px을 넘으면 처음 방향을 고정한다\.
 
@@ -55,7 +55,7 @@ root가 아니고 ` preventSwipeBack `이 false인 화면에서만 활성화한�
 - ` abs(dy) > abs(dx) `이고 ` abs(dy) > 5 `: 세로 제스처로 확정하고 무시
 - 시작점보다 왼쪽으로는 끌리지 않게 0으로 clamp
 
-listener는 passive로 등록하고, DOM transform은 ` requestAnimationFrame `에서 갱신한다\. 한 frame에 한 번만 그리도록 rAF 중복 요청을 막는다\.
+listener는 passive로 등록하고, 드래그 중에는 touch 이동에 맞춰 DOM transform을 갱신한다\. 손을 뗀 뒤의 이동은 CSS transition에 맡긴다\.
 
 ### 4\. 완료 판정
 
@@ -80,38 +80,24 @@ velocity = previousVelocity × 0.1 + currentVelocity × 0.9
 
 손가락을 멈춘 채 80ms 넘게 있다가 떼면 마지막 속도를 0으로 본다\. 네이티브 iOS처럼 &quot;멈췄다 떼면 flick이 아니다&quot;를 따르기 위해서다\.
 
-확정 직전에 lock을 한 번 더 확인한다\. 제스처 도중 다른 navigation이 시작됐다면 확정하지 않고 원위치로 돌아간다\. 이동량이 0 이하인 무효 제스처는 스프링 없이 바로 정리해 입력 차단 시간을 줄인다\.
+확정 직전에 lock을 한 번 더 확인한다\. 제스처 도중 다른 navigation이 시작됐다면 확정하지 않고 원위치로 돌아간다\. 이동량이 0 이하인 무효 제스처는 전환 대기 없이 바로 정리해 입력 차단 시간을 줄인다\.
 
-### 5\. 스프링 시뮬레이션
+### 5\. 손을 뗀 뒤 CSS 전환으로 마무리
 
-확정이면 목표 위치는 화면 너비, 취소면 0이다\.
+현재 소비 버전은 ` stackflow-kit 0.2.2 `\(` 4c32989 `\)다\. 드래그 중에는 JS가 손가락 위치를 반영하지만, 손을 떼면 paper·dim·뒤 화면의 원래 transition을 복원하고 목표 값만 바꾼다\.
 
 <div class="notion-table-wrap">
 <table>
-<thead><tr><th scope="col">상수</th><th scope="col">값</th><th scope="col">의미</th></tr></thead>
-<tbody><tr><td><code>SPRING_STIFFNESS</code></td><td><code>576</code></td><td>목표 위치로 당기는 강성 (고유 진동수 24 rad/s)</td></tr><tr><td><code>SPRING_DAMPING</code></td><td><code>48</code></td><td>감쇠. <code>2√576 = 48</code>이라 임계 감쇠</td></tr><tr><td>질량</td><td><code>1</code></td><td></td></tr><tr><td><code>DT</code></td><td><code>1000 / 120</code> ms</td><td>120Hz 고정 시뮬레이션 step</td></tr></tbody>
+<thead><tr><th scope="col">대상</th><th scope="col">확정</th><th scope="col">취소</th></tr></thead>
+<tbody><tr><td>top paper</td><td><code>translate3d(100%, 0, 0)</code></td><td>원래 transform</td></tr><tr><td>dim</td><td>opacity 0</td><td>원래 opacity</td></tr><tr><td>뒤 화면</td><td>제자리</td><td>원래 패럴랙스 위치</td></tr></tbody>
 </table>
 </div>
 
-```text
-springForce  = -stiffness × (currentX - targetX)
-dampingForce = -damping × velocity
-acceleration = springForce + dampingForce     // 질량 1
-velocity    += acceleration × dt
-position    += velocity × dt
-```
+paper 자신의 ` transform `에 대한 ` transitionend `를 완료 신호로 쓴다\. 이벤트가 오지 않는 경우에도 결과를 전달하도록 ` STACK_TRANSITION_DURATION_MS + 100 = 450ms ` fallback을 둔다\. 확정 결과 콜백은 microtask로 넘긴다\.
 
-처음에는 ` stiffness 400 / damping 40 `\(역시 임계 감쇠, 20 rad/s\)에 60Hz step을 썼다\. 문제는 swipe와 버튼 pop이 서로 다른 곡선으로 움직인다는 점이었다\. 버튼 pop은 StackFlow 기본 CSS 곡선을 썼기 때문이다\. 지금은 스프링을 조금 더 단단하게\(24 rad/s\) 하고 120Hz step으로 바꾼 뒤, 같은 스프링을 정지 상태에서 출발시킨 모양을 CSS ` linear() ` 곡선으로 만들어 push·pop 전환에도 쓴다\. swipe는 손을 뗀 속도에서, push·pop은 정지 상태에서 출발할 뿐 같은 스프링이라 감속 모양과 마무리 시간이 같다\. 이 스프링은 정지 출발 시 350ms 시점에 남은 거리가 화면 너비의 0\.2%다\.
+이전 버전은 강성 576·감쇠 48의 임계 감쇠 스프링을 120Hz 고정 step으로 JS에서 시뮬레이션했다\. 저전력 모드 등으로 WebView의 rAF가 30fps로 제한되면 손을 뗀 뒤에도 움직임이 끊겼다\. 0\.2\.2는 버튼 pop과 같은 CSS 전환을 써 마무리를 컴포지터가 그리게 바꿨다\. 속도는 flick 판정에만 쓰며 마무리 물리의 초기 속도로 전달하지 않는다\.
 
-- 첫 frame은 한 step만 진행한다\. 여러 step을 한 번에 진행하면 손을 뗀 직후 화면이 튄다\.
-- frame 간격은 최대 64ms로 제한한다\.
-- 누적 시간은 고정 step으로 처리하고, 남은 비율로 이전·현재 위치를 보간한다\.
-- 취소 스프링이 0을 넘어 음수로 가지 않게 렌더링 위치를 clamp한다\.
-
-종료 조건:
-
-- 확정: 남은 거리가 2px 미만이면 바로 끝낸다\. 임계 감쇠라 넘치지 않으므로 마지막 몇 px의 꼬리를 기다리지 않는다\.
-- 취소: 남은 거리 1px 미만, 속도 10px/s 미만
+전환 시간은 350ms이고 곡선은 강성 576·감쇠 48의 스프링을 정지 출발시킨 형태를 CSS ` linear() `로 옮긴 값이다\. ` linear() ` 미지원 환경은 ` cubic-bezier ` 근사를 쓴다\. 드래그 중 갱신은 여전히 메인 스레드 성능과 WebView 주사율의 영향을 받는다\.
 
 ### 6\. 화면 transform과 패럴랙스
 
@@ -135,31 +121,31 @@ dim opacity    = 1 - ratio
 
 ### 7\. StackFlow pop 확정
 
-스프링이 화면 밖까지 이동하면 non\-animated pop을 실행한다\.
+CSS 전환 완료 신호 또는 450ms fallback을 받으면 non\-animated pop을 실행한다\.
 
 ```typescript
 stackPop({ animate: false });
 ```
 
-custom 스프링이 이미 퇴장 애니메이션을 끝냈으므로 StackFlow의 350ms pop 애니메이션은 다시 실행하지 않는다\.
+custom CSS 전환이 이미 퇴장 애니메이션을 끝냈으므로 StackFlow의 350ms pop 애니메이션은 다시 실행하지 않는다\.
 
 정리 규칙:
 
-- 취소: top paper의 inline transform을 지우고 transition은 <strong>원래 값으로 되돌린다</strong>\. 빈 문자열로 지우면 화면이 넣어 둔 전환 설정까지 사라져 다음 버튼 pop이 다른 시간·곡선으로 움직였다\. 뒤 화면은 300ms ` ease-out `으로 평상시 패럴랙스 위치에 복귀하고, 그 뒤 원래 transition을 되돌린다\.
+- 취소: top paper의 inline transform을 지우고 transition은 <strong>원래 값으로 되돌린다</strong>\. 빈 문자열로 지우면 화면이 넣어 둔 전환 설정까지 사라져 다음 버튼 pop이 다른 시간·곡선으로 움직였다\. 뒤 화면도 기억해 둔 원래 transition과 평상시 패럴랙스 위치로 복귀한다\.
 - 확정: 뒤 화면을 0 위치에 고정하고 pop한다\.
 - 제스처 도중 훅이 내려가면 cleanup에서 inline style을 정리하고 보류 중인 결과를 반드시 전달한다\. 확정된 pop이 사라지거나 touch 차단 overlay가 남지 않게 하기 위해서다\.
 - ` touchcancel `\(전화 수신, OS 제스처 등\)은 네이티브 의미에 맞춰 항상 원위치로 돌아간다\.
 
 ### 8\. Navigation lock
 
-swipe 확정과 실제 pop 사이에는 스프링 실행 시간이 있다\. 이때 다른 action이 들어오면 Activity가 두 번 제거될 수 있다\. 그래서 swipe, 버튼, hardware back이 하나의 Zustand lock을 공유한다\.
+swipe 확정과 실제 pop 사이에는 CSS 전환 시간이 있다\. 이때 다른 action이 들어오면 Activity가 두 번 제거될 수 있다\. 그래서 swipe, 버튼, hardware back이 하나의 Zustand lock을 공유한다\.
 
 - ` lock() `은 증가하는 token을 발급하고 즉시 ` locked: true `로 둔다\.
 - handler는 React render를 기다리지 않고 ` getState().locked `를 동기로 확인한다\.
 - ` unlock(token) `은 자신이 얻은 lock만 푼다\. 새 token이 발급되면 이전 callback의 unlock은 무시된다\.
 - 비정상 lifecycle에 대비해 fallback timer를 둔다\. ` STACK_TRANSITION_DURATION_MS + 650 `, 현재 ` 1000ms `다\. 전환 시간에서 파생하므로 전환을 늘려도 fallback이 전환 도중 lock을 풀지 않는다\.
 
-swipe는 손을 뗀 순간 ` silent ` lock을 건다\. 일반 lock은 버튼 disabled 표시를 위해 구독 화면을 리렌더하는데, 손을 뗀 frame에 화면 전체가 리렌더되면 스프링 첫 frame이 끊겼다\. silent lock은 차단 효과는 같고 표시만 하지 않는다\.
+swipe는 손을 뗀 순간 ` silent ` lock을 건다\. 일반 lock은 버튼 disabled 표시를 위해 구독 화면을 리렌더하는데, 손을 뗀 frame에 화면 전체가 리렌더되면 마무리 첫 frame이 끊겼다\. silent lock은 차단 효과는 같고 표시만 하지 않는다\.
 
 pop 직전에는 lock 소유를 확인한다\. 이 swipe가 얻은 token이 아직 유효하거나 lock이 비어 있을 때만 pop하고, 다른 action이 lock을 넘겨받았다면 pop하지 않고 paper를 원위치로 돌린다\.
 
@@ -168,7 +154,7 @@ pop 직전에는 lock 소유를 확인한다\. 이 swipe가 얻은 token이 아�
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">경로</th><th scope="col">해제 시점</th></tr></thead>
-<tbody><tr><td>animated push/pop/replace</td><td><code>globalTransitionState</code>가 <code>idle</code>로 돌아올 때</td></tr><tr><td><code>animate: false</code> action (<code>replaceTab</code> 등)</td><td>action 다음 animation frame</td></tr><tr><td>swipe 확정</td><td>스프링 종료 → non-animated pop → 다음 frame</td></tr><tr><td>비정상 lifecycle</td><td>현재 token이 같을 때만 1000ms fallback</td></tr></tbody>
+<tbody><tr><td>animated push/pop/replace</td><td><code>globalTransitionState</code>가 <code>idle</code>로 돌아올 때</td></tr><tr><td><code>animate: false</code> action (<code>replaceTab</code> 등)</td><td>action 다음 animation frame</td></tr><tr><td>swipe 확정</td><td>CSS 전환 종료 → non-animated pop → 다음 frame</td></tr><tr><td>비정상 lifecycle</td><td>현재 token이 같을 때만 1000ms fallback</td></tr></tbody>
 </table>
 </div>
 
@@ -219,7 +205,7 @@ sequenceDiagram
 sequenceDiagram
     participant Input as Touch Input
     participant Edge as Edge Handler
-    participant Spring as Spring Engine
+    participant Spring as CSS Transition
     participant Lock as Nav Lock
     participant Flow as StackFlow
 
@@ -232,11 +218,11 @@ sequenceDiagram
     Edge->>Edge: flick·drag 판정 + lock 재확인
     alt 확정
         Edge->>Lock: lock({ silent: true })
-        Edge->>Spring: targetX = screen width
+        Edge->>Spring: 원래 transition 복원 + 화면 밖 목표
         Spring->>Flow: lock 소유 확인 후 pop({ animate: false })
         Flow->>Lock: 다음 frame에 unlock(token)
     else 취소
-        Edge->>Spring: targetX = 0
+        Edge->>Spring: 원래 transition 복원 + 원위치 목표
         Spring->>Edge: inline style 원래 값 복원
     end
 ```
@@ -264,11 +250,15 @@ sequenceDiagram
 - touch 이벤트 기반이라 desktop pointer·mouse drag는 지원하지 않는다\.
 - edge 폭과 판정 임계값은 고정 상수다\.
 - 뒤 화면 탐색은 renderer의 DOM 구조와 marker에 의존한다\. StackFlow를 올리면 다시 확인한다\.
-- 물리 값은 정적 상수이며 기기별 adaptive tuning은 없다\.
-- iOS WKWebView의 120Hz는 WebView 라이브러리 patch\(비공개 API\)에 기대므로, OS 업데이트나 patch 유실 시 60fps로 돌아갈 수 있다\.
+- 전환 시간과 판정 임계값은 정적 상수이며 기기별 adaptive tuning은 없다\.
+- iOS WKWebView의 120Hz는 WebView 라이브러리 patch\(비공개 API\)에 기대므로, OS 업데이트나 patch 유실 시 60fps로 돌아갈 수 있다\. patch는 화면 최대 주사율이 60Hz를 넘는 기기에만 적용한다\. 60Hz 기기까지 적용하면 30fps로 떨어지는 회귀가 있어 조건을 추가했다\(` 0fbdc4e `\)\.
 
 ### 참고
 
 - StackFlow 공식 소개
 - StackFlow 상태 사용
 - 관련 글: StackFlow 기반 WebView 내비게이션 설계, StackFlow kit 패키지 분리 배경 및 설계
+
+### 구현 근거와 검토 범위
+
+2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/package.json `, ` patches/react-native-webview@13.17.0.patch `, ` docs/specs/stackflow-kit-extraction.md `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
