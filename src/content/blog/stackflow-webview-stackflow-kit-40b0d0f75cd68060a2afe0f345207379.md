@@ -2,10 +2,10 @@
 schemaVersion: 2
 title: "StackFlow 기반 WebView: stackflow-kit 패키지 분리 배경과 설계"
 description: "Web 앱 안에 있던 StackFlow 공통 로직(navigation lock, 안전한 action, 스프링 swipe-back, screen lifecycle)을 런타임과 무관한 독립 패키지로 분리한 배경과 설계를 정리한다. 무엇을 패키지로 옮기고 무엇을 앱에 남겼는지, 앱이 패키지를 어떻게 소비·인증·검증하는지, 패키지를 어떻게 갱신하는지를 현재 구현 기준으로 다룬다."
-tags: ["React", "아키텍처", "개발 도구"]
+tags: ["React", "아키텍처", "개발 도구", "CSS"]
 publishedAt: "2026-11-01T03:51:00.000Z"
-updatedAt: "2026-11-10T15:32:00.000Z"
-manuscriptPages: 37
+updatedAt: "2026-11-11T14:17:00.000Z"
+manuscriptPages: 41
 ---
 
 ### 문서 목적
@@ -165,6 +165,12 @@ kit에는 여러 화면을 전환과 함께 한 번에 닫는 동작이 없다\.
 - 패키지는 ` prepack `에서 TypeScript를 build한다\. pnpm 10은 허용 목록에 없는 의존성의 install script를 실행하지 않으므로, 같은 SHA를 ` pnpm-workspace.yaml `의 ` onlyBuiltDependencies `에 올린다\. 두 SHA가 다르면 build 없이 빈 패키지가 설치된다\.
 - 저장소 harness가 SHA 형식, 두 SHA의 일치, 앱 저장소에 로컬 ` packages/stackflow-kit ` 사본이 다시 생기지 않았는지를 검사한다\.
 
+#### 현재 소비 버전과 렌더링 변경
+
+Web은 ` 0.2.2 `의 commit ` 4c32989bc914f9a0363618deb1733620b466a98e `를 소비한다\. ` web/package.json `, ` pnpm-workspace.yaml `, ` pnpm-lock.yaml `의 pin을 함께 맞춘다\. 0\.2\.1의 JS 스프링 마무리를 0\.2\.2에서 CSS transition으로 바꿨다\. 드래그 중에는 JS transform을 쓰고, 손을 뗀 뒤에는 원래 transition을 복원해 확정·취소 목표로 이동한다\. ` transform `의 ` transitionend ` 또는 450ms fallback 후 결과를 전달한다\.
+
+2026\-11\-10 커밋의 수동 확인 기록은 iPhone 16 Plus\(60Hz\)의 push·버튼 pop·swipe\-back이다\. 같은 변경 후 ProMotion 120Hz, swipe 취소 후 pop, 연속 탭과 Android는 다시 확인하지 않았다\. 이번 문서 갱신에서 새 실기기 검증을 실행한 것은 아니다\.
+
 #### 두 저장소
 
 같은 초기 구현에서 두 저장소가 출발했고 이후 독립적으로 변경될 수 있다\.
@@ -240,7 +246,7 @@ PR 검증, App·shared 검증, Web 배포 세 workflow가 repository secret으�
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">위험</th><th scope="col">자동 검증</th><th scope="col">수동 확인</th></tr></thead>
-<tbody><tr><td>React·StackFlow 중복 인스턴스</td><td>typecheck, production build</td><td>—</td></tr><tr><td>같은 frame 중복 push/pop</td><td>패키지 navigation 테스트</td><td>빠른 연속 탭</td></tr><tr><td>swipe와 버튼 pop 경합</td><td>패키지 swipe 테스트</td><td>iOS WebView swipe</td></tr><tr><td>hardware back 경로 이탈</td><td>앱 <code>stack-screen</code> adapter 주입 테스트</td><td>Android hardware back</td></tr><tr><td>Activity 등록부 3곳 불일치</td><td>설정 파일의 타입 단언</td><td>—</td></tr><tr><td>새로고침·deep link route 유실</td><td>브라우저 E2E</td><td>WebView deep link 복원</td></tr><tr><td>로컬 source 사본 재도입, mutable ref 고정</td><td><code>structure:check</code></td><td>—</td></tr><tr><td>push·pop·swipe 곡선 불일치, 뒤 화면 패럴랙스 지연</td><td>패키지 <code>StackScreen</code>·swipe 테스트, 곡선 일치 테스트</td><td>iOS 실기기 push·pop·swipe</td></tr><tr><td>WKWebView 60fps 상한 복귀</td><td>—</td><td>ProMotion 실기기 rAF/s 120</td></tr></tbody>
+<tbody><tr><td>React·StackFlow 중복 인스턴스</td><td>typecheck, production build</td><td>—</td></tr><tr><td>같은 frame 중복 push/pop</td><td>패키지 navigation 테스트</td><td>빠른 연속 탭</td></tr><tr><td>swipe와 버튼 pop 경합</td><td>패키지 swipe 테스트</td><td>iOS WebView swipe</td></tr><tr><td>hardware back 경로 이탈</td><td>앱 <code>stack-screen</code> adapter 주입 테스트</td><td>Android hardware back</td></tr><tr><td>Activity 등록부 3곳 불일치</td><td>설정 파일의 타입 단언</td><td>—</td></tr><tr><td>새로고침·deep link route 유실</td><td>브라우저 E2E</td><td>WebView deep link 복원</td></tr><tr><td>로컬 source 사본 재도입, mutable ref 고정</td><td><code>structure:check</code></td><td>—</td></tr><tr><td>push·pop·swipe 곡선 불일치, 뒤 화면 패럴랙스 지연</td><td>패키지 <code>StackScreen</code>·swipe 테스트, 곡선 일치 테스트</td><td>iOS 실기기 push·pop·swipe</td></tr><tr><td>WKWebView 60fps 상한 복귀</td><td>—</td><td>ProMotion 실기기 rAF/s 120</td></tr><tr><td>60Hz 기기에서 patch 조건 유실로 30fps 저하</td><td>—</td><td>60Hz 실기기의 앱 WebView 드래그 60fps</td></tr></tbody>
 </table>
 </div>
 
@@ -262,3 +268,7 @@ PR 검증, App·shared 검증, Web 배포 세 workflow가 repository secret으�
 ### 참고
 
 - 관련 글: StackFlow 기반 WebView 내비게이션 설계, 커스텀 Swipe\-back 구현 배경 및 설계
+
+### 구현 근거와 검토 범위
+
+2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/package.json `, ` pnpm-workspace.yaml `, ` pnpm-lock.yaml `, ` docs/specs/stackflow-kit-extraction.md `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
