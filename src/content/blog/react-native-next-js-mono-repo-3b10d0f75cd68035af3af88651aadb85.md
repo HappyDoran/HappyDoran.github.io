@@ -4,8 +4,8 @@ title: "React Native + Next.js Mono-repo 로컬 개발 환경 설정"
 description: "React Native App과 Next.js Web workspace를 로컬에서 실행하기 위해 구성한 환경을 정리한다."
 tags: ["React Native", "Next.js", "개발 도구"]
 publishedAt: "2026-08-03T08:48:00.000Z"
-updatedAt: "2026-11-10T15:32:00.000Z"
-manuscriptPages: 19
+updatedAt: "2026-11-11T14:17:00.000Z"
+manuscriptPages: 22
 ---
 
 React Native App과 Next\.js Web workspace를 로컬에서 실행하기 위해 구성한 환경을 정리한다\.
@@ -196,6 +196,12 @@ pnpm run android:prd
 
 자동 배포는 dev만 구현되어 있다\. prd 실행·빌드 명령이 있다고 production 배포가 구현된 것은 아니며, 독립 배포 전까지 prd는 dev Web/API를 바라본다\.
 
+#### App 없이 브라우저에서 점검
+
+개발 서버의 ` ?fakeNative=1 `은 가짜 native 성공 응답, ` fail `·` cancel `은 오류·취소 응답을 활성화한다\. ` ?fakeNative=0 `으로 해제하며 모드는 localStorage에 남는다\. 실제 WebView에는 설치하지 않고 운영 번들에서는 제외한다\. Google 로그인은 실제 idToken을 쓰므로 개발 origin을 OAuth client의 승인된 JavaScript 원본에 등록해야 한다\.
+
+사진 분석은 가짜 촬영 payload를 만들지 않는다\. 일반 브라우저에서도 실제 파일 선택 → 포즈 검출 → 포인트 조정 → 직접 PUT 흐름을 쓴다\. HTTP LAN에서는 ` crypto.subtle `이 없어 완료를 막으며 HTTPS/[localhost](<http://localhost/>)가 필요하다\. [localhost](<http://localhost/>)라도 저장소의 PUT CORS 허용은 별도로 필요하다\. 일반 브라우저는 화면 이동을 ` animate: false `로 즉시 처리한다\.
+
 ### 11\. Storybook
 
 ```bash
@@ -269,3 +275,7 @@ App은 빌드 시점 바인딩이다\. Metro만 재시작하지 말고 앱을 �
 watchman watch-del "$(pwd)"
 watchman watch-project "$(pwd)"
 ```
+
+### 구현 근거와 검토 범위
+
+2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/package.json `, ` web/src/shared/bridge/lib/fake-native.ts `, ` web/src/features/pose-camera/README.md `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
