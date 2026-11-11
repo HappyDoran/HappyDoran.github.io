@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "WWDC) Introducing SwiftUI: Building Your First App"
-description: "SwiftUI의 View 작동 방식"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "swiftUI에서 뷰는 UI뷰와 같은 기본 클래스에서 상속되는 클래스가 아니라 뷰 프로토콜을 준수하는 구조체."
 tags: ["SwiftUI", "상태 관리", "렌더링"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

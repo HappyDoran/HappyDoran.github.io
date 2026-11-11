@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "Property Wrapper"
-description: "Property Wrappers"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "@ObservedObject, @State, @EnvironmentObject, @Binding 처럼 생긴 애들이 프로퍼티 래퍼라고 합니다."
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -167,7 +165,7 @@ print(rectangle1.height,rectangle1.width) // 0 0
 
 프로퍼티 래퍼에서는 Projected Value라는 기능이 있습니다\.
 
-내가 정의한 프로퍼티 래퍼에서 원하는대로 값을 표현할 수 있습니다\. 앞에 **$**를 붙여서 사용하면 됩니다\.
+내가 정의한 프로퍼티 래퍼에서 원하는대로 값을 표현할 수 있습니다\. 앞에 <strong>$</strong>를 붙여서 사용하면 됩니다\.
 
 ```swift
 @propertyWrapper

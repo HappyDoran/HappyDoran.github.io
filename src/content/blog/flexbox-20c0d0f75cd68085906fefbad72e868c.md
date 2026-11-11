@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "Flexbox"
-description: "container 속성"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "Flexbox"
 tags: ["CSS", "렌더링"]
 publishedAt: "2025-06-08T11:09:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

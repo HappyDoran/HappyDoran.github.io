@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "React.memo, useMemo, useCallback으로 컴포넌트 최적화"
 description: "랜더링이 지나치게 발생하거나, 랜더링마다 무거운 작업을 계속하게 된다면 성능에 부담을 줄 경우 사용할 수 있다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["React", "렌더링", "성능 최적화"]
 publishedAt: "2025-07-27T05:44:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -16,7 +14,7 @@ props가 변경이 되는 경우에만 랜더링이 되게 만든다면 효율�
 
 ## React\.memo
 
-> 💡 **HOC\(고차 컴포넌트\)**
+> 💡 <strong>HOC\(고차 컴포넌트\)</strong>
 > 
 > 어떠한 컴포넌트를 인자로 받아서 새로운 컴포넌트를 반환해주는 함수
 > ㄴ 최적화된 컴포넌트는 prop check를 통해서 본인이 받는 props에 변화가 있는지 없는지 체크

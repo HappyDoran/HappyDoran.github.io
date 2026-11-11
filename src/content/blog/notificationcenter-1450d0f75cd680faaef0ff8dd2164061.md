@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "NotificationCenter"
-description: "Notification?"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "여기서의 Notification은 유저에게 무엇인가 알려주는 알림이 아니라, “앱 내에서 정보를 전하기 위해서 알림을 방송한다”는 역할을 가지고 있다."
 tags: ["Swift", "상태 관리"]
 publishedAt: "2024-11-21T08:45:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

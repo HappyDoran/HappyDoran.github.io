@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "WWDC) Meet AsyncSequence"
-description: "What is AsyncSequence?"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "한번에 하나씩 단계별로 진행할 수 있는 값 목록(list of values)을 제공하는 프로토콜."
 tags: ["Swift", "동시성"]
 publishedAt: "2024-10-02T00:22:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -42,7 +40,7 @@ lines는 ` AsyncLineSequence ` 타입이고 AsyncLineSequence 타입은 궁극�
 
 Async 함수를 사용하면`  콜백없이 await 키워드로 동시성 코드를 작성 `할 수 있고, 비동기 함수를 호출하면 suspend된 다음 결과 값이나 오류가 발생할 때마다 다시 resume 되는데, ` AsyncSequence를 사용하면 각 요소마다 suspend 되고 Iterator에 의해 결과 값이나 에러가 던져지면 resume 된다.(suspend 🔄 resume) `
 
-> 💡 **야매 정리**
+> 💡 <strong>야매 정리</strong>
 > 
 > 한 줄을 읽으러 간다 → 
 > 이 한 줄 읽는 동안에 suspend\(스레드를 열어둠\. 다른 작업 가능\) → 
@@ -55,7 +53,7 @@ Async 함수를 사용하면`  콜백없이 await 키워드로 동시성 코드�
 
 AsyncSequence의 각 요소는 비동기로 전달되기 때문에 에러를 던질 수도 있다\. 따라서 ` throws 함수처럼 에러 핸들링 `을 해야 한다\. 값이 하나도 없을수도 있으며, ` Sequence와 같은 방식 `으로 Iterator에서 nil을 리턴하는 방식으로 조절할 수 있다\. 
 
-> 💡 **AsyncSequece 정리**
+> 💡 <strong>AsyncSequece 정리</strong>
 > 
 > 기존의 Sequence와 동일한 부분이 있지만 차이점이 있다\.
 > \- 각 Element마다 비동기로 전달된다\.

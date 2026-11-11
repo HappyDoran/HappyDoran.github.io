@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "StackFlow 기반 WebView: 커스텀 Swipe-back 구현 배경과 설계"
-description: "문서 목적"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "WebView 화면의 swipe-back을 직접 구현한 배경과 설계를 정리한다. 제스처 판정, 스프링 물리, 패럴랙스 렌더링, navigation lock, StackFlow pop과 네이티브 hardware back의 연결 방식을 다룬다."
 tags: ["React", "아키텍처", "렌더링", "성능 최적화"]
 publishedAt: "2026-08-03T09:18:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
@@ -53,8 +51,8 @@ root가 아니고 ` preventSwipeBack `이 false인 화면에서만 활성화한�
 
 ` dx `, ` dy ` 중 하나가 5px을 넘으면 처음 방향을 고정한다\.
 
-- ` abs(dx) &gt; abs(dy) `이고 ` abs(dx) &gt; 5 `: 가로 swipe 시작\. 판정 지점부터 따라가 화면이 5px 튀지 않게 한다\.
-- ` abs(dy) &gt; abs(dx) `이고 ` abs(dy) &gt; 5 `: 세로 제스처로 확정하고 무시
+- ` abs(dx) > abs(dy) `이고 ` abs(dx) > 5 `: 가로 swipe 시작\. 판정 지점부터 따라가 화면이 5px 튀지 않게 한다\.
+- ` abs(dy) > abs(dx) `이고 ` abs(dy) > 5 `: 세로 제스처로 확정하고 무시
 - 시작점보다 왼쪽으로는 끌리지 않게 0으로 clamp
 
 listener는 passive로 등록하고, DOM transform은 ` requestAnimationFrame `에서 갱신한다\. 한 frame에 한 번만 그리도록 rAF 중복 요청을 막는다\.
@@ -147,7 +145,7 @@ custom 스프링이 이미 퇴장 애니메이션을 끝냈으므로 StackFlow�
 
 정리 규칙:
 
-- 취소: top paper의 inline transform을 지우고 transition은 **원래 값으로 되돌린다**\. 빈 문자열로 지우면 화면이 넣어 둔 전환 설정까지 사라져 다음 버튼 pop이 다른 시간·곡선으로 움직였다\. 뒤 화면은 300ms ` ease-out `으로 평상시 패럴랙스 위치에 복귀하고, 그 뒤 원래 transition을 되돌린다\.
+- 취소: top paper의 inline transform을 지우고 transition은 <strong>원래 값으로 되돌린다</strong>\. 빈 문자열로 지우면 화면이 넣어 둔 전환 설정까지 사라져 다음 버튼 pop이 다른 시간·곡선으로 움직였다\. 뒤 화면은 300ms ` ease-out `으로 평상시 패럴랙스 위치에 복귀하고, 그 뒤 원래 transition을 되돌린다\.
 - 확정: 뒤 화면을 0 위치에 고정하고 pop한다\.
 - 제스처 도중 훅이 내려가면 cleanup에서 inline style을 정리하고 보류 중인 결과를 반드시 전달한다\. 확정된 pop이 사라지거나 touch 차단 overlay가 남지 않게 하기 위해서다\.
 - ` touchcancel `\(전화 수신, OS 제스처 등\)은 네이티브 의미에 맞춰 항상 원위치로 돌아간다\.

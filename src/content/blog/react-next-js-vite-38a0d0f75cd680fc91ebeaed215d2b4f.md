@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "React, Next.js, Vite는 라이브러리인가 프레임워크인가"
-description: "핵심 한 줄 요약"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "React, Next.js, Vite는 라이브러리인가 프레임워크인가"
 tags: ["React", "Next.js", "개발 도구"]
 publishedAt: "2026-06-25T00:36:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
@@ -12,41 +10,41 @@ manuscriptPages: 5
 
 ### 핵심 한 줄 요약
 
-- **React**: UI를 만드는 **라이브러리**
-- **Next\.js**: React 기반의 웹앱을 만드는 **프레임워크**
-- **Vite**: 개발 서버 \+ 번들링을 담당하는 **빌드 도구**
+- <strong>React</strong>: UI를 만드는 <strong>라이브러리</strong>
+- <strong>Next\.js</strong>: React 기반의 웹앱을 만드는 <strong>프레임워크</strong>
+- <strong>Vite</strong>: 개발 서버 \+ 번들링을 담당하는 <strong>빌드 도구</strong>
 
 ---
 
 #### 1\. React = 라이브러리 \(Library\)
 
-- **정의**: 사용자 인터페이스\(UI\)를 만들기 위한 JavaScript 라이브러리
-- **왜 라이브러리인가? \(제어권 관점\)**
+- <strong>정의</strong>: 사용자 인터페이스\(UI\)를 만들기 위한 JavaScript 라이브러리
+- <strong>왜 라이브러리인가? \(제어권 관점\)</strong>
    - 앱의 전체 구조/흐름을 React가 강제하지 않음
-   - **라우팅, 상태관리** 등은 개발자가 원하는 도구를 골라 조합해야 함
+   - <strong>라우팅, 상태관리</strong> 등은 개발자가 원하는 도구를 골라 조합해야 함
       - 예: React Router, Zustand, Redux 등
-   - 즉, **개발자가 주도권을 가지고 필요한 기능을 “가져다 쓰는” 형태**
+   - 즉, <strong>개발자가 주도권을 가지고 필요한 기능을 “가져다 쓰는” 형태</strong>
 
 ---
 
 #### 2\. Next\.js = 프레임워크 \(Framework\)
 
-- **정의**: React를 기반으로 한 웹 애플리케이션 프레임워크
-- **왜 프레임워크인가? \(규칙/틀 제공\)**
-   - ` app ` / ` pages ` 폴더 구조 등 **정해진 규칙**을 제공
-   - 파일을 만들면 **라우팅이 자동으로 구성**됨
-   - SSR\(서버 사이드 렌더링\), 이미지 최적화 등 **내장 기능** 제공
-   - 실행 흐름의 주도권이 프레임워크에 있는 형태 → **제어의 역전\(IoC\)**
+- <strong>정의</strong>: React를 기반으로 한 웹 애플리케이션 프레임워크
+- <strong>왜 프레임워크인가? \(규칙/틀 제공\)</strong>
+   - ` app ` / ` pages ` 폴더 구조 등 <strong>정해진 규칙</strong>을 제공
+   - 파일을 만들면 <strong>라우팅이 자동으로 구성</strong>됨
+   - SSR\(서버 사이드 렌더링\), 이미지 최적화 등 <strong>내장 기능</strong> 제공
+   - 실행 흐름의 주도권이 프레임워크에 있는 형태 → <strong>제어의 역전\(IoC\)</strong>
 
 ---
 
 #### 3\. Vite = 빌드 도구 \(Build Tool\)
 
-- **정의**: 빠른 개발 서버 \+ 번들링/트랜스파일을 제공하는 프론트엔드 빌드 도구
-- **역할**
+- <strong>정의</strong>: 빠른 개발 서버 \+ 번들링/트랜스파일을 제공하는 프론트엔드 빌드 도구
+- <strong>역할</strong>
    - 브라우저가 바로 이해 못하는 문법을 변환
       - JSX, TypeScript 등
-   - 여러 자원\(JS/CSS/이미지\)을 **효율적으로 묶고\(번들링\) 최적화**
+   - 여러 자원\(JS/CSS/이미지\)을 <strong>효율적으로 묶고\(번들링\) 최적화</strong>
    - 전통적으로 Webpack이 담당하던 영역을 더 빠르게 대체하는 경우가 많음
 
 ---
@@ -64,5 +62,5 @@ manuscriptPages: 5
 
 #### 결론: 언제 무엇을 쓰나
 
-- **가볍고 빠른 SPA 개발**: ` React + Vite `
-- **SEO/SSR/풀스택 기능이 필요한 웹앱**: ` Next.js `
+- <strong>가볍고 빠른 SPA 개발</strong>: ` React + Vite `
+- <strong>SEO/SSR/풀스택 기능이 필요한 웹앱</strong>: ` Next.js `

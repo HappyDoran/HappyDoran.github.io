@@ -14,7 +14,6 @@ export async function GET(context: APIContext): Promise<Response> {
       "<link>" + escapeXml(link) + "</link>",
       '<guid isPermaLink="true">' + escapeXml(link) + "</guid>",
       "<pubDate>" + post.data.publishedAt.toUTCString() + "</pubDate>",
-      "<category>" + escapeXml(post.data.category) + "</category>",
       "<description>" + escapeXml(post.data.description) + "</description>",
       "</item>",
     ].join("");

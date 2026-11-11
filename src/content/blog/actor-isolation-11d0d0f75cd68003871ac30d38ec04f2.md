@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "Actor Isolation"
 description: "immutable(변동 불가능한) state면 Actor를 쓸 필요가 없다. 근데 지금 공유 가변 상태여서 지금 문제가 발생할 여지가 있는 것이다. 그래서 우리가 Actor라는 걸 쓰고 있는 것이고, Actor가 mutable(변할 수 있는) 상태에 동시에 접근하지 않도록 막으니까(Swift가 근본적으로 보증하니까)…"
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["Swift", "동시성"]
 publishedAt: "2024-10-12T13:42:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

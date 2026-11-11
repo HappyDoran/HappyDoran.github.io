@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "WebView 하이브리드 앱의 프론트엔드 아키텍처 전략"
-description: "문서 목적"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "React Native WebView shell과 Next.js 콘텐츠를 한 저장소에서 함께 운영하면서 적용한 아키텍처를 정리한다. 런타임 경계, 소스 의존 방향, 공통 패키지, native adapter, Native-Web bridge와 API 계약, 상태 관리, 검증 기준을 다룬다."
 tags: ["React Native", "Next.js", "아키텍처", "상태 관리"]
 publishedAt: "2026-08-03T08:49:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
@@ -115,7 +113,7 @@ web/src/
 └─ public/                   # 도메인별 정적 asset
 ```
 
-catch\-all route는 StackFlow ` &lt;Stack /&gt; `만 렌더링한다\. Activity와 route·plugin 등록은 app layer에서 조립하고, 실제 화면 UI는 feature가 소유한다\. 하나의 Activity가 여러 feature를 조합하면 ` app/[[...stack]]/stackflow/activities `에 둔다\.
+catch\-all route는 StackFlow ` <Stack /> `만 렌더링한다\. Activity와 route·plugin 등록은 app layer에서 조립하고, 실제 화면 UI는 feature가 소유한다\. 하나의 Activity가 여러 feature를 조합하면 ` app/[[...stack]]/stackflow/activities `에 둔다\.
 
 범용 HTTP 인프라는 ` shared/api `, 도메인 요청은 ` features/{feature}/api `에 둔다\. 과거에 어댑터 교체용으로 두었던 ` apis `, ` services ` 같은 예외 폴더는 정리했고, 지금은 구조 검사 스크립트가 ` apis `·` queries `·` services `·` config `·` interfaces `·` errors `·` model ` 폴더 자체를 막는다\.
 
@@ -206,7 +204,7 @@ OpenAPI 생성기\(` @hey-api/openapi-ts `\)는 설정만 준비해 두었다\. 
 Native ` SafeAreaView `는 좌우 inset만 처리한다\. top/bottom inset은 Web이 직접 다룬다\.
 
 1. App이 콘텐츠 로드 전에 ` window.__{PREFIX}_INITIAL_SAFE_AREA__ ` 전역을 주입한다\.
-1. Web ` &lt;head&gt; `의 동기 bootstrap script가 이 값\(없으면 localStorage 캐시\)을 CSS 변수 ` -{prefix}-safe-area-top/bottom `에 반영한다\. 첫 페인트 깜빡임을 막기 위해서다\.
+1. Web ` <head> `의 동기 bootstrap script가 이 값\(없으면 localStorage 캐시\)을 CSS 변수 ` -{prefix}-safe-area-top/bottom `에 반영한다\. 첫 페인트 깜빡임을 막기 위해서다\.
 1. 회전·포그라운드 복귀 등으로 값이 바뀌면 ` native:safe-area ` 이벤트로 다시 보낸다\.
 
 bootstrap script는 zod를 쓸 수 없어 타입·범위\(0~120\)를 직접 검증한다\. 화면 외곽은 ` Layout.Content `·` Layout.Bottom `의 ` safeAreaVariant `로 지정하고, ` StackScreen `은 AppBar 높이와 safe\-area top을 합산해 콘텐츠 offset을 계산한다\.

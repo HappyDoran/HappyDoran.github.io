@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "기본 데이터 타입"
-description: "Bool"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "true, false 만 가능한 데이터 타입"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:31:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

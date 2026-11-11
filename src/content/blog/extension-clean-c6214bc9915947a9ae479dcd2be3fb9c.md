@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "extension을 얼마나 잘 다루느냐가 clean한 코드를 작성하는데 영향을 미칩니다."
-description: "Extension"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "Swift 문법 중에 엄청 많이 쓰는 extension에 대해서 알아봅시다."
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:35:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "Display와 Position"
-description: "Display"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "다음과 같이 작성할 경우, 배치는 다음과 같다."
 tags: ["CSS", "렌더링"]
 publishedAt: "2025-06-08T06:40:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -75,8 +73,8 @@ span {
 
 ### 결론 
 
-**block**은 안의 콘텐츠와는 상관 없이 지정된 사이즈에 맞춰서 배치된다\. 
-**inline**레벨의 경우 콘텐츠의 크기에 따라서 다이나믹하게 사이즈가 바뀐다\.
+<strong>block</strong>은 안의 콘텐츠와는 상관 없이 지정된 사이즈에 맞춰서 배치된다\. 
+<strong>inline</strong>레벨의 경우 콘텐츠의 크기에 따라서 다이나믹하게 사이즈가 바뀐다\.
 
 ## position
 

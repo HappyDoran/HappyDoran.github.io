@@ -1,18 +1,16 @@
 ---
 schemaVersion: 2
 title: "WWDC) Design protocol interfaces in Swift"
-description: "Understand type erasure"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "WWDC) Design protocol interfaces in Swift"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T15:13:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
 manuscriptPages: 22
 ---
 
-> 🤔 **무엇을 배우나요?**
+> 🤔 <strong>무엇을 배우나요?</strong>
 > 
-> **실존 타입을 사용하는 방법**을 소개하고, **불투명 반환 타입으로 인터페이스와 구현을 분리하는 방법**을 알아보며, **구체적인 타입 간의 관계를 식별하고 보장하는데 도움이 될 수 있는 동일 타입 요구사항을 소개**합니다\.
+> <strong>실존 타입을 사용하는 방법</strong>을 소개하고, <strong>불투명 반환 타입으로 인터페이스와 구현을 분리하는 방법</strong>을 알아보며, <strong>구체적인 타입 간의 관계를 식별하고 보장하는데 도움이 될 수 있는 동일 타입 요구사항을 소개</strong>합니다\.
 
 ## Understand type erasure
 
@@ -60,7 +58,7 @@ Cow 타입은 CommodityType이 Milk인 Animal 프로토콜을 따릅니다\.
 
 이처럼 서로 다른 구체적인 유형에 대해 동일한 표현을 사용하는 이러한 전략을 ` type Erasure(타입 삭제) ` 라고 합니다\. 타입 이레이저는 이렇게 Animal 프로토콜을 따르는 특정 타입이 채워진다고 명시한 하는 것을 말합니다\.
 
-**무슨 소린지 모르겠습니다\.**
+<strong>무슨 소린지 모르겠습니다\.</strong>
 
 produceCommodities\(\) 메서드는 animals array를 매핑하여 각 동물에 대해 produce\(\) 메서드를 호출합니다\. Type Erasure는 기본 동물 타입에 대한 정적 타입 관계를 제거한다는 것을 알고 있으므로, 이 코드 타입이 검사하는 이유를 이해하려면 더 깊게 파고드는 것이 좋습니다\.
 
@@ -114,7 +112,7 @@ Animal 프로토콜은 isHungry라는 프로퍼티를 가집니다\.
 
 Farm은 hungryAnimal을 찾아 먹이를 주는 역할을 합니다\.
 
-hungryAnimal의 filter는 동물이 적을 때는 유용할 수 있지만, 동물이 많아지면 연산이 불필요하게 증가할 것입니다\.  **왜 그런지 모르겠습니다\.**
+hungryAnimal의 filter는 동물이 적을 때는 유용할 수 있지만, 동물이 많아지면 연산이 불필요하게 증가할 것입니다\.  <strong>왜 그런지 모르겠습니다\.</strong>
 
 lazy를 이용하면 이러한 불필요한 임시 할당을 피할 수 있습니다\.
 
@@ -178,7 +176,7 @@ AnimalFeed에서는 CropType에서 Crop을 연관 타입을 사용하고, Crop�
 
 이 모델들은 타입에 안전하지도 않습니다\. 소에게는 Hay를 길러서 Alfalfa를 수확해야 하는데, Hay가 Scratch로 바뀌어도 알 방법이 없죠\. Hay도 AnimalFeed이고 Scratch도 AnimalFeed입니다\.
 
-**무슨 소린지 모르겠습니다\.**
+<strong>무슨 소린지 모르겠습니다\.</strong>
 
 where를 사용하면 이 문제를 해결할 수 있습니다\.
 

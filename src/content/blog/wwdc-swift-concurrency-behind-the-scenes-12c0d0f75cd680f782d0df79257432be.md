@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "WWDC) Swift concurrency: Behind the scenes"
-description: "Threading Model"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "WWDC) Swift concurrency: Behind the scenes"
 tags: ["Swift", "동시성"]
 publishedAt: "2024-10-27T07:58:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -240,8 +238,8 @@ Swift를 사용하면 언어를 통해 스레드가 항상 앞으로 나갈 수 
 
 ### Mutual exclusion
 
-> 💡 **Actor
-> 상호배제 \- 한번에 하나의 메서드를 호출, 데이터 경합 방지**
+> 💡 <strong>Actor</strong>
+> <strong>상호배제 \- 한번에 하나의 메서드를 호출, 데이터 경합 방지</strong>
 
 Actor의 예시를 생각해보면 DataBase는 직렬큐로 실행이 되고, 그 안에서 네트워킹은 비동기로 실행이 되었다\. 일단은 데이터 경합은 일어나지 않는다\. 하지만 이때 문제를 생각해보면 실행될 스레드를 계속 요청한다\. 그렇게 되면 계속되는 컨텍스트 변환이 생기게 되고 문제가 생기지\. 이를 막기 위해 actor를 사용한다\. 
 

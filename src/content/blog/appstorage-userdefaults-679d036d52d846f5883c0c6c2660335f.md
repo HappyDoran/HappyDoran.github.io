@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "@AppStorage와 UserDefaults"
 description: "App에 간단하게 값들을 저장하고 싶을 때는 UserDefaults와 iOS14 이후에 생긴 @Appstorage가 있습니다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["SwiftUI", "상태 관리"]
 publishedAt: "2024-08-27T07:35:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -51,7 +49,7 @@ UserDefaults.standard.removeObject(forKey: "clothSize")
 ```
 
 - UserDefaults 처럼 값을 불러오거나 저장하는 코드를 직접 구현 해야하는 번거로움 대신 @AppStorage 속성만으로 프로퍼티를 선언하고 초기 값만 대입해주면 됩니다\.
-- **@AppStorage는 데이터 추출이 쉽게 때문에 개인 데이터를 저장하면 안됩니다\. **
+- <strong>@AppStorage는 데이터 추출이 쉽게 때문에 개인 데이터를 저장하면 안됩니다\. </strong>
 
 ### @AppStorage의 예시
 

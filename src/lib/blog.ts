@@ -51,13 +51,6 @@ function readSiteSettings(): SiteSettings {
 
 export type BlogPost = CollectionEntry<"blog">;
 
-export interface BlogCategory {
-  count: number;
-  name: string;
-  posts: readonly BlogPost[];
-  slug: string;
-}
-
 export function pathFor(path = ""): string {
   return base + path.replace(/^\/+/, "");
 }
@@ -73,34 +66,6 @@ export function sortPosts(posts: readonly BlogPost[]): BlogPost[] {
   });
 }
 
-export function categoriesFor(posts: readonly BlogPost[]): BlogCategory[] {
-  const grouped = new Map<string, { name: string; posts: BlogPost[] }>();
-  for (const post of sortPosts(posts)) {
-    const existing = grouped.get(post.data.categorySlug);
-    if (existing === undefined) {
-      grouped.set(post.data.categorySlug, {
-        name: post.data.category,
-        posts: [post],
-      });
-    } else {
-      existing.posts.push(post);
-    }
-  }
-
-  return [...grouped.entries()]
-    .map(([slug, category]) => ({
-      count: category.posts.length,
-      name: category.name,
-      posts: category.posts,
-      slug,
-    }))
-    .sort((left, right) =>
-      right.count - left.count ||
-      compareText(left.name, right.name) ||
-      compareText(left.slug, right.slug),
-    );
-}
-
 export interface BlogTag {
   count: number;
   name: string;
@@ -108,12 +73,17 @@ export interface BlogTag {
   slug: string;
 }
 
-/** 태그 주소. 카테고리 slug와 같은 규칙(영문·숫자 부분 + 정규화한 이름의 hash 8자)이라 한글 태그도 안정적이다. */
+/** 태그 slug. 영문·숫자 부분 + 정규화한 이름의 hash 8자라 한글 태그도 안정적이다. */
 export function tagSlug(name: string): string {
   const normalized = name.normalize("NFKC").trim().replace(/\s+/gu, " ").toLowerCase();
   const hash = createHash("sha256").update(normalized, "utf8").digest("hex").slice(0, 8);
   const ascii = normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48).replace(/-+$/g, "");
   return ascii ? ascii + "-" + hash : "tag-" + hash;
+}
+
+/** 태그 링크는 전체 글의 태그 거르기로 간다(R9). */
+export function tagPath(name: string): string {
+  return pathFor("posts/?tag=" + tagSlug(name));
 }
 
 export function tagsFor(posts: readonly BlogPost[]): BlogTag[] {
@@ -132,39 +102,6 @@ export function tagsFor(posts: readonly BlogPost[]): BlogTag[] {
   return [...grouped.entries()]
     .map(([slug, tag]) => ({ count: tag.posts.length, name: tag.name, posts: tag.posts, slug }))
     .sort((left, right) => right.count - left.count || compareText(left.name, right.name));
-}
-
-export interface BlogSeries {
-  name: string;
-  posts: readonly BlogPost[];
-  slug: string;
-}
-
-/** 시리즈(R10): seriesOrder가 작을수록 앞, 없으면 뒤에 두고 같으면 게시일이 이른 글이 앞이다. */
-export function seriesFor(posts: readonly BlogPost[]): BlogSeries[] {
-  const grouped = new Map<string, { name: string; posts: BlogPost[] }>();
-  for (const post of posts) {
-    const { series, seriesSlug } = post.data;
-    if (series === undefined || seriesSlug === undefined) {
-      continue;
-    }
-    const existing = grouped.get(seriesSlug) ?? { name: series, posts: [] };
-    existing.posts.push(post);
-    grouped.set(seriesSlug, existing);
-  }
-  const order = (post: BlogPost) => post.data.seriesOrder ?? Number.POSITIVE_INFINITY;
-  return [...grouped.entries()]
-    .map(([slug, series]) => ({
-      name: series.name,
-      posts: series.posts.sort(
-        (left, right) =>
-          order(left) - order(right) ||
-          left.data.publishedAt.valueOf() - right.data.publishedAt.valueOf() ||
-          compareText(left.id, right.id),
-      ),
-      slug,
-    }))
-    .sort((left, right) => compareText(left.name, right.name));
 }
 
 /** 게시일(UTC) 기준 연·월 묶음. 최근 달이 먼저다. */

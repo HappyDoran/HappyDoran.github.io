@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "DIContainer 적용과 고민"
 description: "안녕하세요, HMHZ Studio 개발 팀에서 iOS / Frontend 개발을 하고 있는 도란입니다. 이번 글에서는 프로젝트에서의 의존성 주입을 담당하는 DIContainer를 사용한 경험을 공유 해보려고 합니다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["Swift", "아키텍처"]
 publishedAt: "2025-02-02T06:41:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -30,7 +28,7 @@ manuscriptPages: 9
 
 ### DIContainer란
 
-**Dependency Container**라고 하며 의존성을 주입을 해주는 컨테이너를 만들어서 해당 컨테이너가 모든 인스턴스를 다 가지고 있고 다 관리를 한다는 취지입니다\. 
+<strong>Dependency Container</strong>라고 하며 의존성을 주입을 해주는 컨테이너를 만들어서 해당 컨테이너가 모든 인스턴스를 다 가지고 있고 다 관리를 한다는 취지입니다\. 
 
 Container에 앞으로 내가 사용할 인스턴스를 만들어놓고\(register\), 필요한 시점에 Conatiner에서 특정 타입의 인스턴스를 꺼내서 사용하는\(resolve\) 방식이라 생각하면 됩니다\. 
 

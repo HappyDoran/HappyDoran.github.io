@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "WWDC) Data Flow Through SwiftUI"
-description: "What is Data?"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "SwiftUI에서는 데이터가 1급 시민입니다."
 tags: ["SwiftUI", "상태 관리"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

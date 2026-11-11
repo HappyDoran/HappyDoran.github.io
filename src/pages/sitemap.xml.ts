@@ -1,20 +1,14 @@
 import { getCollection } from "astro:content";
 import type { APIContext } from "astro";
 
-import { absoluteUrl, categoriesFor, escapeXml, seriesFor, sortPosts, tagsFor } from "../lib/blog";
+import { absoluteUrl, escapeXml, sortPosts } from "../lib/blog";
 
 export async function GET(context: APIContext): Promise<Response> {
   const posts = sortPosts(await getCollection("blog"));
   const pages: { lastmod?: Date; path: string }[] = [
     { path: "" },
     { path: "posts/" },
-    { path: "categories/" },
-    { path: "tags/" },
     { path: "archive/" },
-    { path: "series/" },
-    ...seriesFor(posts).map((series) => ({ path: "series/" + series.slug + "/" })),
-    ...categoriesFor(posts).map((category) => ({ path: "categories/" + category.slug + "/" })),
-    ...tagsFor(posts).map((tag) => ({ path: "tags/" + tag.slug + "/" })),
     ...posts.map((post) => ({ lastmod: post.data.updatedAt, path: "posts/" + post.id + "/" })),
   ];
   const urls = pages.map(

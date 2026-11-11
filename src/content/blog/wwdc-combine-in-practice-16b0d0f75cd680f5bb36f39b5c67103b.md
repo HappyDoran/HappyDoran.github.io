@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "WWDC) Combine in Practice"
-description: "Combine의 전체 흐름"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "→ 이러한 형태의 통신은 Callbacks, Closures, Notifications, Key Value, Observing 등 비동기 통신에서 전반적으로 나타난다."
 tags: ["Swift", "동시성", "상태 관리"]
 publishedAt: "2024-12-29T07:30:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -154,12 +152,12 @@ receive는 뭐냐면 publisher 해온 데이터를 메인 스레드\(UI를 다�
 
 ![](<../../assets/blog/wwdc-combine-in-practice-16b0d0f75cd680f5bb36f39b5c67103b/image-022.png>)
 
-- NotificationCenter를 통해 Notification을 발행하는 Publisher를 생성 \(**Notification, Never**\)
-- map을 통해 Notification을 Data로 변환 \(**Data, Never**\)
-- flatMap을 사용 \(**MagicTrick, Never**\)
+- NotificationCenter를 통해 Notification을 발행하는 Publisher를 생성 \(<strong>Notification, Never</strong>\)
+- map을 통해 Notification을 Data로 변환 \(<strong>Data, Never</strong>\)
+- flatMap을 사용 \(<strong>MagicTrick, Never</strong>\)
    - 새로운 Just Publisher를 생성하여 decoding을 하고 Subscriber에 전달\.
    - decoding에서 에러가 발생할 경우 Just Publisher와의 연결을 끊어버리고, Recovery Publisher에서 Placeholder를 발행 받아서 Subscriber에 전달\.
-- 이 받아온 값을 메인스레드로 옮겨서 작업할 수 있도록 receive를 사용 \(**String, Never**\)
+- 이 받아온 값을 메인스레드로 옮겨서 작업할 수 있도록 receive를 사용 \(<strong>String, Never</strong>\)
 
 ## Subscriber
 

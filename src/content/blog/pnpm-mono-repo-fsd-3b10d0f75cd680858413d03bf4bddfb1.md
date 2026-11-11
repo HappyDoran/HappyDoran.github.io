@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "pnpm Mono-repo와 축소형 FSD 구현"
-description: "목적"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "React Native App과 Next.js Web을 한 저장소에서 관리하면서도 런타임 의존성, framework 설정, 플랫폼 프로젝트의 소유권은 workspace별로 나눈다. 이 문서는 그 구성을 실제 구현 기준으로 기록한다."
 tags: ["React Native", "Next.js", "아키텍처", "개발 도구"]
 publishedAt: "2026-08-03T08:48:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
@@ -14,7 +12,7 @@ manuscriptPages: 18
 
 React Native App과 Next\.js Web을 한 저장소에서 관리하면서도 런타임 의존성, framework 설정, 플랫폼 프로젝트의 소유권은 workspace별로 나눈다\. 이 문서는 그 구성을 실제 구현 기준으로 기록한다\.
 
-> 표기: 내부 패키지 scope는 ` @scope `, workspace 패키지 이름은 ` &lt;app 패키지&gt; `·` &lt;web 패키지&gt; `로 바꿔 적었다\.
+> 표기: 내부 패키지 scope는 ` @scope `, workspace 패키지 이름은 ` <app 패키지> `·` <web 패키지> `로 바꿔 적었다\.
 
 ### 1\. Repository 구성
 

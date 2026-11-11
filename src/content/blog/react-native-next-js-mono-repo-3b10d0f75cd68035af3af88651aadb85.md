@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "React Native + Next.js Mono-repo 로컬 개발 환경 설정"
 description: "React Native App과 Next.js Web workspace를 로컬에서 실행하기 위해 구성한 환경을 정리한다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["React Native", "Next.js", "개발 도구"]
 publishedAt: "2026-08-03T08:48:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
@@ -12,7 +10,7 @@ manuscriptPages: 19
 
 React Native App과 Next\.js Web workspace를 로컬에서 실행하기 위해 구성한 환경을 정리한다\.
 
-> 표기: 프로젝트 고유 접두사는 ` {PREFIX} `, workspace 패키지 이름은 ` &lt;app 패키지&gt; `로 바꿔 적었다\.
+> 표기: 프로젝트 고유 접두사는 ` {PREFIX} `, workspace 패키지 이름은 ` <app 패키지> `로 바꿔 적었다\.
 
 ### 사전 준비
 
@@ -130,7 +128,7 @@ cd app
 pnpm run local-dev     # .env.local + react-native start --reset-cache
 ```
 
-` react-native ` CLI는 PATH에 없다\. 항상 ` pnpm run &lt;script&gt; `로 실행하고, script는 ` scripts/run-with-envfile.mjs `가 env 파일을 읽어 실행한다\.
+` react-native ` CLI는 PATH에 없다\. 항상 ` pnpm run <script> `로 실행하고, script는 ` scripts/run-with-envfile.mjs `가 env 파일을 읽어 실행한다\.
 
 ### 7\. iOS 실제 기기
 
@@ -226,7 +224,7 @@ E2E는 처음 한 번 Web workspace에서 ` pnpm run test:e2e:install `로 Chrom
 
 private StackFlow 저장소 읽기 권한이 없다\. SSH key 권한을 확인하거나 위의 PAT ` insteadOf ` 설정을 한다\.
 
-#### ` Could not find &#39;bundler&#39; `
+#### ` Could not find 'bundler' `
 
 macOS 기본 Ruby를 쓰고 있다\. ` mise install ` 후 저장소 디렉터리에서 다시 ` bundle install `한다\.
 

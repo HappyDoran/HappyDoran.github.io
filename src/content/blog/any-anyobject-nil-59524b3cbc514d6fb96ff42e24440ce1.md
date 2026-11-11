@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "Any, AnyObject, nil"
-description: "Any"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "swift의 모든 타입을 지칭하는 키워드"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:31:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "WWDC) Embrace Swift generics"
-description: "들어가기전에"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "제네릭 정복하기"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -48,7 +46,7 @@ Swift에서는 구체적인 타입\(Concrete type\) 또한 추상화 할 수 있
 
 같은 개념을 공유하지만 디테일이 다른 타입들의 집합이 있을 경우, 이 모든 구체적인 타입들을 다룰 수 있는 추상화된 코드를 작성할 수 있습니다\.
 
-**이러한 구체적인 타입들을 추상화하는 WorkFlow를 봐봅시다\.**
+<strong>이러한 구체적인 타입들을 추상화하는 WorkFlow를 봐봅시다\.</strong>
 
 ## 구체적인 타입\(Concrete type\) 만들기
 
@@ -300,9 +298,9 @@ class Chicken: Animal<Grain> {
 
 그러니까 먹이가 중요한게 아닌데 동물 클래스를 쓰는 모든 곳에서 먹이 타입을 명시해야하는 문제가 있습니다\. 이는 번거로움을 유발합니다\.
 
-> 💡 **subtype polymorphism의 문제점
+> 💡 <strong>subtype polymorphism의 문제점</strong>
 > 
-> **근본적인 문제는 클래스는 데이터 타입인데, 구체적인 타입들에 대한 개념을 추상화하기 위해 superclass를 복잡하게 만들고 있는 겁니다\.
+> 근본적인 문제는 클래스는 데이터 타입인데, 구체적인 타입들에 대한 개념을 추상화하기 위해 superclass를 복잡하게 만들고 있는 겁니다\.
 > 
 > → 클래스는 데이터로 사용하기에 적합하지 않다\!
 > 
@@ -421,10 +419,10 @@ some 키워드는 파라미터와 결과 타입에서도 사용될 수 있습니
 
 swiftUI 뷰에서, body 프로퍼티는 특정 타입의 뷰를 리턴하지만, 코드는 특정 타입이 무엇인지 알 필요 없이 body 프로퍼티를 사용합니다\.
 
-> ❓ **Abstract Type == Opaque Type**
+> ❓ <strong>Abstract Type == Opaque Type</strong>
 > 특정 구체적인 타입의 placeholder를 나타냅니다\.
 
-> ❓ **Underlying Type**
+> ❓ <strong>Underlying Type</strong>
 > opaque type이 사용된 placeholder를 대체하는 특정 구체적인 타입을 의미합니다\.
 > 실제 타입, 내부에서 실제로 사용하는 타입, 특정 구체 타입입니다\.
 
@@ -488,7 +486,7 @@ human.drink(water)
 
 Underlying 타입은 값에서 추론될 수 있습니다\. 
 
-**some은 항상 구체적인 타입이 있다는 것을 나타낸다는 것을 기억합시다\.**
+<strong>some은 항상 구체적인 타입이 있다는 것을 나타낸다는 것을 기억합시다\.</strong>
 
 #### Local variables
 
@@ -542,7 +540,7 @@ func makeView(for farm: Farm) -> some View { //에러남
 }
 ```
 
-opaque result 타입을 갖는 메서드나 연산 프로퍼티는 프로그램 내의 어디에서도 호출될 수 있기 때문에, 이 결과 값의 범위는 전역적이라고 볼 수 있습니다\. **따라서 underying return 타입이 모든 return 문에서 같아야합니다\.**
+opaque result 타입을 갖는 메서드나 연산 프로퍼티는 프로그램 내의 어디에서도 호출될 수 있기 때문에, 이 결과 값의 범위는 전역적이라고 볼 수 있습니다\. <strong>따라서 underying return 타입이 모든 return 문에서 같아야합니다\.</strong>
 
 ViewBuilder를 붙이면 해결이 되긴 합니다\.
 
@@ -654,7 +652,7 @@ any type은 어떠한 종류의 타입이라도 동적으로 저장할 수 있�
 
 어떤 경우에 값은 박스보다 작아서 박스 안에 들어갈 수 있습니다\. 하지만 박스에 들어가기에는 너무 큰 경우에는 값은 다른 곳에 할당되어야 하고, 박스는 그 값을 가리키는 포인터를 담는 방식으로 값을 저장해야 할 것입니다\. 
 
-정적 타입인 any Animal이 동적으로 저장할 수 있는 구체적인 동물 타입을 공식적으로 **existential type**이라고 합니다\.
+정적 타입인 any Animal이 동적으로 저장할 수 있는 구체적인 동물 타입을 공식적으로 <strong>existential type</strong>이라고 합니다\.
 
 ### Existential types provide type erasure
 
@@ -687,9 +685,9 @@ struct Farm {
 }
 ```
 
-> ❓ ** animal\.eat\(Animal\.Food\)에서 오류가 나는 이유
+> ❓ <strong> animal\.eat\(Animal\.Food\)에서 오류가 나는 이유</strong>
 > 
-> **Type erasure\(any\)를 통해 ‘animals’ 배열에 저장하는 구체적인 동물 타입간의 ‘type\-level’ 차이를 없앴기 때문에, 연관 타입과 같이 특정 동물 타입에 의존하는 모든 type 관계도 지워졌기 떄문입니다\. 그래서 이 ‘animal’이 어떤 타입의 먹이를 기대하는지 알 수 없습니다\.
+> Type erasure\(any\)를 통해 ‘animals’ 배열에 저장하는 구체적인 동물 타입간의 ‘type\-level’ 차이를 없앴기 때문에, 연관 타입과 같이 특정 동물 타입에 의존하는 모든 type 관계도 지워졌기 떄문입니다\. 그래서 이 ‘animal’이 어떤 타입의 먹이를 기대하는지 알 수 없습니다\.
 
 → 쉽게 말해서 type erasure로 구체적인 구분을 제거해서 어떤 타입인지 모르는 겁니다\.
 

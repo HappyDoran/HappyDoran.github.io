@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "Async, Await, .task로 비동기 뿌시기"
 description: "직렬, 동시성, 동기, 비동기에 대한 개념을 이해하고 오시면 좋습니다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["Swift", "동시성"]
 publishedAt: "2024-08-27T07:35:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -18,17 +16,17 @@ manuscriptPages: 12
 
 ### 동기\(sync\)
 
-어떤 작업이 동기적으로 실행된다는 말은**, 해당 작업이 끝날 때 까지 다른 작업들은 기다린다**는 것을 뜻합니다\.
+어떤 작업이 동기적으로 실행된다는 말은<strong>, 해당 작업이 끝날 때 까지 다른 작업들은 기다린다</strong>는 것을 뜻합니다\.
 
 ![](<../../assets/blog/async-await-task-678787ce8c6a4185a2833ac013ba390f/image-001.png>)
 
 ### 비동기\(async\)
 
-해당 작업이 끝나든 말든 신경쓰지 않고 **나머지 작업을 바로 실행**합니다\. 
+해당 작업이 끝나든 말든 신경쓰지 않고 <strong>나머지 작업을 바로 실행</strong>합니다\. 
 
 ![](<../../assets/blog/async-await-task-678787ce8c6a4185a2833ac013ba390f/image-002.png>)
 
-→ 이미지 다운로드나 네트워킹 등** 작업 시간이 오래걸리는 것**들은 비동기로 처리하는게 좋습니다\. 
+→ 이미지 다운로드나 네트워킹 등<strong> 작업 시간이 오래걸리는 것</strong>들은 비동기로 처리하는게 좋습니다\. 
 
 ## 비동기 작업에서의 CompletionHandler
 
@@ -127,9 +125,9 @@ try의 의미는 정리하면 ‘이 함수가 오류가 발생할수도 있는�
 
 ![](<../../assets/blog/async-await-task-678787ce8c6a4185a2833ac013ba390f/image-008.png>)
 
-함수 이름 뒤에 async가 붙으면 **이 함수는 비동기**라는 것을 나타냅니다\.
+함수 이름 뒤에 async가 붙으면 <strong>이 함수는 비동기</strong>라는 것을 나타냅니다\.
 
-근데 이 비동기 함수가 **오류를 내뱉을 가능성이 있는 메소드**에요\! 그럼 이제 throws를 붙여줍니다
+근데 이 비동기 함수가 <strong>오류를 내뱉을 가능성이 있는 메소드</strong>에요\! 그럼 이제 throws를 붙여줍니다
 
 → 영어 문법상 읽기가 async throws가 좋아서 이렇게 했답니다\.
 

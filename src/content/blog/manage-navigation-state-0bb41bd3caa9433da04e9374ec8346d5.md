@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "Manage Navigation State"
 description: "NavigationStack(NavigationView 안녕)"
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["SwiftUI", "상태 관리", "아키텍처"]
 publishedAt: "2024-08-27T07:35:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

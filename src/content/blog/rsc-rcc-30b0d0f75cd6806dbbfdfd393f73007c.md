@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "RSC와 RCC"
 description: "Next.js에서 App Router(app 디렉토리) 환경에서, 별도의 선언(상단에 ‘use client’)이 없는 모든 컴포넌트(page.tsx, layout.tsx)들은 기본적으로 RSC(React Server Component)이다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["React", "Next.js", "렌더링"]
 publishedAt: "2026-02-18T07:25:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -78,13 +76,13 @@ export default function LikeButton({ initialLikes }: { initialLikes: number }) {
 
 ## 매핑
 
-1. **RSC 페이로드 \(3번 항목\):**
-   - ` BlogPage `가 실행되면, ` posts ` 데이터와 HTML 구조, 그리고 ` LikeButton `이 들어갈 자리\(Placeholder\) 정보가 **JSON 형태의 RSC Payload**로 변환되어 브라우저로 전송됩니다\.
+1. <strong>RSC 페이로드 \(3번 항목\):</strong>
+   - ` BlogPage `가 실행되면, ` posts ` 데이터와 HTML 구조, 그리고 ` LikeButton `이 들어갈 자리\(Placeholder\) 정보가 <strong>JSON 형태의 RSC Payload</strong>로 변환되어 브라우저로 전송됩니다\.
    - ` LikeButton `의 실제 JS 코드는 별도의 번들\(Reference\)로 전송됩니다\.
-1. **Transpiling &amp; Fiber \(1\.2번 항목\):**
+1. <strong>Transpiling &amp; Fiber \(1\.2번 항목\):</strong>
    - 서버에서도 ` BlogPage `의 JSX를 해석하기 위해 Babel 등을 거쳐 React Element로 변환하고 렌더링을 수행합니다\.
    - 질문1\. 내가알기론 렌더링 과정은 SSR는 서버에서 클라이언트로 꽉차있는 바이트스트림을 보내서 클라이언트에서 렌더링 작업을 수행하는걸로 아는데 이 작업은 서버에서도 수행한다는 말이 무슨 말인가?
    - 혹시 이 말이 페이로드의 생성에 한정해서 페이로드에 대한 조합을 랜더링이라 통틀어서 얘기하는 것일까?
-1. **Hydration \(4\.2번 항목\):**
+1. <strong>Hydration \(4\.2번 항목\):</strong>
    - 브라우저는 ` BlogPage `의 HTML을 먼저 보여줍니다\(Preview\)\.
    - 그 후 ` LikeButton `의 JS 코드를 다운로드하여 ` onClick ` 이벤트를 연결합니다\(Hydration\)\.

@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "Declaring a custom view"
 description: "View를 정의하고 계층 구조로 조합하는 방법에 대해서 알아봅시다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["Swift", "SwiftUI"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

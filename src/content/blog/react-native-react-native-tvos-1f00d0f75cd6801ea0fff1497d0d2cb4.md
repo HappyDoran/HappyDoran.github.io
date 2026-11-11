@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "React Native에서 React Native TVOS로"
 description: "package.json을 봤을 때, 현재는 다음과 같이 사용되고 있다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["React Native", "개발 도구"]
 publishedAt: "2025-05-11T23:53:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

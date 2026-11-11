@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "순환 참조"
-description: "강한 참조"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "순환 참조"
 tags: ["Swift", "언어 기초", "성능 최적화"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -12,7 +10,7 @@ manuscriptPages: 9
 
 ## 강한 참조
 
-> 💡 **ARC란?**
+> 💡 <strong>ARC란?</strong>
 > 
 > 참조 횟수를 계산하여 0이 되는 시점에 힙에서 자동으로 해제되는 것
 

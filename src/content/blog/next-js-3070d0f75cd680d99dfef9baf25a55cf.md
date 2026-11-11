@@ -1,26 +1,24 @@
 ---
 schemaVersion: 2
 title: "브라우저 렌더링 원리와 Next.js 동작 흐름"
-description: "💡 핵심 요약"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "웹 성능 최적화의 핵심은 \"브라우저가 화면을 그리는 과정을 얼마나 줄이느냐\"에 달렸다. 이를 이해하려면 브라우저가 HTML을 픽셀로 바꾸는 과정과, 리액트/Next.js가 그 사이에 어떻게 개입하는지 알아야 한다."
 tags: ["Next.js", "렌더링", "성능 최적화"]
 publishedAt: "2026-02-14T14:37:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
 manuscriptPages: 10
 ---
 
-> **💡 핵심 요약**
+> <strong>💡 핵심 요약</strong>
 
-1. **브라우저:** URL 입력 후 화면이 그려지는 과정 \(CRP\) 이해\.
-1. **Next\.js:** 서버에서 미리 그리는 방식 \(SSR\)과 그 이후의 동작 \(Hydration\) 이해\.
-1. **목적:** &quot;주소창에 URL을 입력하면 무슨 일이 일어나는가?&quot;에 대한 완벽한 답변 준비\.
+1. <strong>브라우저:</strong> URL 입력 후 화면이 그려지는 과정 \(CRP\) 이해\.
+1. <strong>Next\.js:</strong> 서버에서 미리 그리는 방식 \(SSR\)과 그 이후의 동작 \(Hydration\) 이해\.
+1. <strong>목적:</strong> &quot;주소창에 URL을 입력하면 무슨 일이 일어나는가?&quot;에 대한 완벽한 답변 준비\.
 
 ---
 
 ### 1\. 개요 \(Overview\)
 
-웹 성능 최적화의 핵심은 \*\*&quot;브라우저가 화면을 그리는 과정을 얼마나 줄이느냐&quot;\*\*에 달렸다\. 이를 이해하려면 브라우저가 HTML을 픽셀로 바꾸는 과정과, 리액트/Next\.js가 그 사이에 어떻게 개입하는지 알아야 한다\.
+웹 성능 최적화의 핵심은 <strong>&quot;브라우저가 화면을 그리는 과정을 얼마나 줄이느냐&quot;</strong>에 달렸다\. 이를 이해하려면 브라우저가 HTML을 픽셀로 바꾸는 과정과, 리액트/Next\.js가 그 사이에 어떻게 개입하는지 알아야 한다\.
 
 ---
 
@@ -28,22 +26,22 @@ manuscriptPages: 10
 
 Next\.js 사용 여부와 관계없이 브라우저는 반드시 아래 5단계\(CRP\)를 거쳐 화면을 그린다\.
 
-1. **파싱 \(Parsing\):**
-   - **HTML → DOM 트리:** 뼈대 구축\.
-   - **CSS → CSSOM 트리:** 스타일 정보 분석\.
-1. **스타일 \(Style\):**
-   - **렌더 트리:** 실제 화면에 보일 요소만 추출함\. \(` display: none ` 제거\)
-1. **레이아웃 \(Layout / Reflow\):**
-   - 각 요소가 화면의 **어디에**, **어떤 크기**로 배치될지 계산함\. \(px 단위 변환\)
-1. **페인트 \(Paint\):**
+1. <strong>파싱 \(Parsing\):</strong>
+   - <strong>HTML → DOM 트리:</strong> 뼈대 구축\.
+   - <strong>CSS → CSSOM 트리:</strong> 스타일 정보 분석\.
+1. <strong>스타일 \(Style\):</strong>
+   - <strong>렌더 트리:</strong> 실제 화면에 보일 요소만 추출함\. \(` display: none ` 제거\)
+1. <strong>레이아웃 \(Layout / Reflow\):</strong>
+   - 각 요소가 화면의 <strong>어디에</strong>, <strong>어떤 크기</strong>로 배치될지 계산함\. \(px 단위 변환\)
+1. <strong>페인트 \(Paint\):</strong>
    - 계산된 위치에 픽셀\(색상, 텍스트\)을 채워 넣음\.
-1. **합성 \(Composite\):**
+1. <strong>합성 \(Composite\):</strong>
    - 여러 레이어를 합쳐 최종 화면 생성\.
 
-> **⚠️ 성능 포인트**
+> <strong>⚠️ 성능 포인트</strong>
 
-- **Reflow \(비쌈\):** 레이아웃\(크기, 위치\) 변경 시 전체 재계산 발생\. 성능 저하의 주범임\.
-- **Repaint \(쌈\):** 색상만 변경 시 레이아웃 계산을 건너뛰므로 비교적 가벼움\.
+- <strong>Reflow \(비쌈\):</strong> 레이아웃\(크기, 위치\) 변경 시 전체 재계산 발생\. 성능 저하의 주범임\.
+- <strong>Repaint \(쌈\):</strong> 색상만 변경 시 레이아웃 계산을 건너뛰므로 비교적 가벼움\.
 
 ---
 
@@ -51,8 +49,8 @@ Next\.js 사용 여부와 관계없이 브라우저는 반드시 아래 5단계\
 
 #### 3\.1\. CSR \(Client Side Rendering\)
 
-- **방식:** 서버는 빈 껍데기\(` div#root `\)만 제공함\. 브라우저가 JS를 다운로드 및 실행한 뒤 화면을 조립함\.
-- **단점:** JS 다운로드 전까지 **흰 화면\(White Screen\)** 지속됨\. SEO에 불리함\.
+- <strong>방식:</strong> 서버는 빈 껍데기\(` div#root `\)만 제공함\. 브라우저가 JS를 다운로드 및 실행한 뒤 화면을 조립함\.
+- <strong>단점:</strong> JS 다운로드 전까지 <strong>흰 화면\(White Screen\)</strong> 지속됨\. SEO에 불리함\.
 
 ```mermaid
 sequenceDiagram
@@ -105,15 +103,15 @@ sequenceDiagram
 
 #### 3\.2\. SSR \(Server Side Rendering \- Next\.js\)
 
-- **방식:** 서버가 미리 완성된 HTML을 생성해서 전달함\.
-- **장점:** 화면이 즉시 보임\(FCP 빠름\)\. SEO 최적화 유리\.
-- **단점:** 화면은 보이나 JS 연결 전까지 클릭 등 상호작용 불가\. \(Hydration 대기\)
+- <strong>방식:</strong> 서버가 미리 완성된 HTML을 생성해서 전달함\.
+- <strong>장점:</strong> 화면이 즉시 보임\(FCP 빠름\)\. SEO 최적화 유리\.
+- <strong>단점:</strong> 화면은 보이나 JS 연결 전까지 클릭 등 상호작용 불가\. \(Hydration 대기\)
 
 ---
 
 ### 4\. Next\.js의 하이브리드 메커니즘 \(핵심\)
 
-Next\.js는 **&quot;초기 로딩은 SSR로 빠르게, 페이지 이동은 CSR로 부드럽게&quot;** 처리하는 전략을 사용함\.
+Next\.js는 <strong>&quot;초기 로딩은 SSR로 빠르게, 페이지 이동은 CSR로 부드럽게&quot;</strong> 처리하는 전략을 사용함\.
 
 #### 4\.1\. 첫 접속 시 \(Initial Load\)
 
@@ -211,12 +209,12 @@ flowchart TD
 
 ### 6\. 결론
 
-1. **기본:** 브라우저는 HTML을 받아 파싱하고 그린다\. \(DOM → Layout → Paint\)
-1. **Next\.js:** 브라우저 렌더링 부하를 줄이기 위해 **서버에서 미리 HTML을 완성**해서 보냄\. \(초기 속도 향상\)
-1. **하이드레이션:** 미리 그려진 화면에 JS가 후속으로 붙어 **기능\(이벤트\)을 활성화**함\.
-1. **페이지 이동:** 초기 진입만 HTML을 받고, 이후 이동은 **데이터\(JSON\)만 받아서** CSR처럼 부드럽게 처리함\.
+1. <strong>기본:</strong> 브라우저는 HTML을 받아 파싱하고 그린다\. \(DOM → Layout → Paint\)
+1. <strong>Next\.js:</strong> 브라우저 렌더링 부하를 줄이기 위해 <strong>서버에서 미리 HTML을 완성</strong>해서 보냄\. \(초기 속도 향상\)
+1. <strong>하이드레이션:</strong> 미리 그려진 화면에 JS가 후속으로 붙어 <strong>기능\(이벤트\)을 활성화</strong>함\.
+1. <strong>페이지 이동:</strong> 초기 진입만 HTML을 받고, 이후 이동은 <strong>데이터\(JSON\)만 받아서</strong> CSR처럼 부드럽게 처리함\.
 
-> **🚀 Best Practice**
+> <strong>🚀 Best Practice</strong>
 
-- 가능한 \*\*Server Component\(` page.tsx `\)\*\*를 기본으로 사용하여 데이터 처리를 서버에 위임한다\.
+- 가능한 <strong>Server Component\(` page.tsx `\)</strong>를 기본으로 사용하여 데이터 처리를 서버에 위임한다\.
 - ` useState `, ` onClick ` 등 상호작용이 필수인 말단 컴포넌트에만 \*\*` use client `\*를 붙여 JS 번들 사이즈를 줄인다\.

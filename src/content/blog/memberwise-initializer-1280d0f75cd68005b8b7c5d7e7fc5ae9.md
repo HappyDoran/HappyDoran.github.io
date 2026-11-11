@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "Memberwise Initializer의 접근 지정자"
 description: "Memberwise Initializer의 접근 지정자"
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-10-23T15:39:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

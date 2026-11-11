@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "앱에서의 Auth 플로우?"
-description: "앱 빌드 시작"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "어디에 쓰는거에요? 어떠한 행위를 관찰하고 구독하려고 쓰는거에요?(이 앱에서)"
 tags: ["SwiftUI", "네트워크", "상태 관리"]
 publishedAt: "2024-11-21T15:29:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

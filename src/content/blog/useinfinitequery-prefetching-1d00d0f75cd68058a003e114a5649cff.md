@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "useInfiniteQuery와 Prefetching"
-description: "개요"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "웹 애플리케이션에서 무한 스크롤은 사용자 경험을 향상시키는 중요한 UI 패턴이다. React Query의 useInfiniteQuery는 이러한 무한 스크롤을 쉽게 만들어주는 강력한 도구이다."
 tags: ["React", "상태 관리", "네트워크", "성능 최적화"]
 publishedAt: "2025-04-09T05:30:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -24,19 +22,19 @@ React Query의 useInfiniteQuery는 페이지네이션된 데이터를 효율적�
 
 useInfiniteQuery의 단조로운 옵션은 다음과 같다\.
 
-**queryKey**
+<strong>queryKey</strong>
 
 : 쿼리를 호출할 때 해당되는 키값과 매치되는 데이터가 있는지 없는지 먼저 체크하기 위해 사용한다\.
 
-**queryFn**
+<strong>queryFn</strong>
 
 : 쿼리에서 실행할 함수이다\.
 
-**getNextPageParam**
+<strong>getNextPageParam</strong>
 
 : queryFn에서 함수를 실행할 때 필요한 offset\(예를 들어, 다음 페이지를 뜻하는 params\)를 설정한다\.
 
-**initialPageParam** 
+<strong>initialPageParam</strong> 
 
 : 처음 페이지 offset을 뜻한다\. 대체적으로 0페이지부터 가져오거나, 1페이지부터 가져온다\.
 
@@ -104,9 +102,9 @@ useEffect(() => {
 
 ## useInfiniteQuery만을 사용할 때의 한계점
 
-하지만 **무한스크롤만으로는 사용자 경험을 극대화할 수 없다\.**
+하지만 <strong>무한스크롤만으로는 사용자 경험을 극대화할 수 없다\.</strong>
 
-> 💡 **가정**
+> 💡 <strong>가정</strong>
 > 
 > 사용자가 네트워크 상태가 느릴 경우에, 사용자는 다음 데이터를 보기 위해서 스크롤을 내린다 하자\.
 > 
@@ -122,15 +120,15 @@ useEffect(() => {
 
 prefetchQuery를 적용하기 전에 미리 숙지하고 가면 좋을 개념은 다음과 같다\.
 
-**useQueryClient**
+<strong>useQueryClient</strong>
 
 : React Query는 내부적으로 queryClient를 사용하여 각종 상태를 저장하고, 부가 기능을 제공한다\.
 
-**prefetchQuery**
+<strong>prefetchQuery</strong>
 
 :  useQuery와 똑같이 쿼리 함수를 실행해서 서버에서 데이터를 가져오되, 가져와서 캐시에 저장한다\.
 
-**getQueryData**
+<strong>getQueryData</strong>
 
 : QueryKey에 해당하는 데이터를 가져온다\.
 
@@ -227,11 +225,11 @@ export const useGetEventByPagination = (startPage = DEFAULT_INFINITY_SCROLL_STAR
 };
 ```
 
-**fetchNextPage**
+<strong>fetchNextPage</strong>
 
 fetchNextPage, 다음 페이지를 가져오는 함수에서 쿼리키에 해당되는 데이터, 캐시 데이터가 있는지 먼저 파악한 후 있으면 서버로부터 데이터를 가져오는 query를 실행하지 않고, 캐시 데이터를 가져온다\. 
 
-**useEffect**
+<strong>useEffect</strong>
 
 데이터가 바뀔 경우, 즉 데이터가 추가될 경우에 prefetch를 실행하여 미리 데이터를 가져오는 prefetch를 실행한다\. 
 

@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "@Bindable, @Observable"
-description: "Managing model data in your app"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "앱의 데이터 모델과 뷰 사이에 연결을 만듭니다."
 tags: ["SwiftUI", "상태 관리"]
 publishedAt: "2024-09-05T03:36:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -113,7 +111,7 @@ struct LibraryView: View {
 
 > Observation은 Observable한 객체의 프로퍼티 중 body에서 접근하고 있는 프로퍼티들만 추적합니다\.
 
-> 💡 **무슨 말인지 모르겠습니다\.**
+> 💡 <strong>무슨 말인지 모르겠습니다\.</strong>
 > 
 > The view stores the ` List ` content closure as an ` @escaping ` closure that SwiftUI calls when lazily creating list items before they appear on the screen\.
 > 
@@ -206,7 +204,7 @@ struct LibraryItemView: View {
 
 ### Create the source of truth for model data
 
-> 💡 **SOT\(Source Of Truth\)란?**
+> 💡 <strong>SOT\(Source Of Truth\)란?</strong>
 > 
 > 데이터베이스, 애플리케이션, 프로세스 등의 모든 데이터에 대해서 하나의 출처를 사용하는 개념
 > 
@@ -251,9 +249,9 @@ Library와 같은 데이터 모델을 보유하고 있다면, 이를 앱 하위�
 
 전자의 방법은 편하지만, 뷰 계층이 깊어지면 이를 어디서 필요로하는지 알기 어려워서 코드 이해에 안좋은 영향을 줍니다\.
 
-그래서 Environment에 모델 객체를 추가하는 방식이 더 선호됩니다\. Environment\(*:*:\)혹은 environment\(\_:\) modifier를 사용하면 되는데, 전자의 경우 좀 더 과정이 복잡합니다\.
+그래서 Environment에 모델 객체를 추가하는 방식이 더 선호됩니다\. Environment\(<em>:</em>:\)혹은 environment\(\_:\) modifier를 사용하면 되는데, 전자의 경우 좀 더 과정이 복잡합니다\.
 
-#### Environment\(*:*:\)
+#### Environment\(<em>:</em>:\)
 
 EnvironmentKey를 커스텀해서 생성해야합니다\. EnvironmentValues를 확장하여 custom key를 가질 수 있도록 get과 set을 설정합니다\.
 

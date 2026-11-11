@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "MV패턴 날 것으로 이해하기 쉽게 정리하기-Mohammad Azam"
-description: "Moduler Architecture"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "작고 독립적인 모듈 또는 구성 요소를 설계하고 구성하는 것. 각각이 독립적이기 때문에 각각의 모듈은 특정 목적을 수행하고 특정 비즈니스 요구 사항을 해결한다. 다른 모듈에서 소비되거나 사용될 모듈을 만드는 경우, 해당 모듈과 소통하면서 고립되지 않은 모듈을 만드는 것이 중요하다."
 tags: ["SwiftUI", "아키텍처", "상태 관리"]
 publishedAt: "2024-09-24T08:09:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -124,17 +122,17 @@ Aggregate Model은 캐싱을 자체적으로 구현하는 대신 네트워크 �
 
 ![](<../../assets/blog/mv-mohammad-azam-10b0d0f75cd68040b5bfc2a72b68362a/image-004.png>)
 
-**CatalogUI** : 카탈로그와 관련된 사용자 인터페이스를 나타낸다\. 여기에는 AddCatalogScreen, UpdateCatalogScreen 등과 같은 모든 카탈로그 관련 항목이 포함될 수 있다\.
+<strong>CatalogUI</strong> : 카탈로그와 관련된 사용자 인터페이스를 나타낸다\. 여기에는 AddCatalogScreen, UpdateCatalogScreen 등과 같은 모든 카탈로그 관련 항목이 포함될 수 있다\.
 
-**Catalog** : 카탈로그와 연관된 모델을 나타낸다\. 여기에는 집계 모델과 집계 모델에 의해 노출된 모든 엔터티가 포함된다\.
+<strong>Catalog</strong> : 카탈로그와 연관된 모델을 나타낸다\. 여기에는 집계 모델과 집계 모델에 의해 노출된 모든 엔터티가 포함된다\.
 
-**MyStoreKit** : 네트워크 호출을 수행하기 위한 HTTP 클라이언트를 나타낸다\.
+<strong>MyStoreKit</strong> : 네트워크 호출을 수행하기 위한 HTTP 클라이언트를 나타낸다\.
 
-**Foundation Core** : 모든 모듈에서 사용하는 리소스를 나타낸다\. 여기에는 헬퍼 클래스/구조체, 재사용 가능한 뷰, 이미지, 아이콘, 심지어 테스트에 사용되는 미리보기 콘텐츠도 포함될 수 있다\.
+<strong>Foundation Core</strong> : 모든 모듈에서 사용하는 리소스를 나타낸다\. 여기에는 헬퍼 클래스/구조체, 재사용 가능한 뷰, 이미지, 아이콘, 심지어 테스트에 사용되는 미리보기 콘텐츠도 포함될 수 있다\.
 
 이렇게 각 모듈은 폴더 구조 또는 패키지 종속성으로 표현될 수 있다\.
 
-## **View Specific Logic**
+## <strong>View Specific Logic</strong>
 
 Aggregate Model은 SOT로 작용하고 뷰에서 필요한 데이터를 제공할 수 있다\. 그치만 뷰에서의 특정 로직은 어떻게 되고, 그 로직은 무엇이며 어디에 배치해야하는지, 그 로직을 테스트하기 위해서는 어떻게 해야하는지 알아보자\. 
 
@@ -323,7 +321,7 @@ React에서는 Components, Flutter에서는 Widgets이라 불리는 것들 Swift
 
 예를 들어, 영화의 세부 정부를 표시할 때 해당 뷰를 MovieDetailView라고 부르는 대신에 MovieDetailScreen 이라고 부를 수 있습니다\. 이렇게하면 세부 정부 뷰가 실제 화면이며 재사용이 가능한 자식 뷰가 아니라는 것이 명확해진다\. 
 
-**화면**
+<strong>화면</strong>
 
 - 영화 세부 정보 화면
 - 홈 화면
@@ -331,7 +329,7 @@ React에서는 Components, Flutter에서는 Widgets이라 불리는 것들 Swift
 - 등록화면
 - 설정화면
 
-**조회수**
+<strong>조회수</strong>
 
 - 평가보기
 - 메시지뷰

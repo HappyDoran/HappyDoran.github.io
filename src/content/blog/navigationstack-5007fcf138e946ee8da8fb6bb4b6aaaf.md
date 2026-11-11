@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "NavigationStack 화면전환 방법"
 description: "iOS 16+부터 사용할 수 있는 NavigationStack을 이용한 라우터 로직"
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["SwiftUI", "상태 관리", "아키텍처"]
 publishedAt: "2024-08-27T07:35:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

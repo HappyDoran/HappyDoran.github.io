@@ -1,16 +1,14 @@
 ---
 schemaVersion: 2
 title: "React Native + Next.js Mono-repo 버전 관리"
-description: "표기: 패키지 scope는 @scope, workspace 패키지 이름은 \u003capp 패키지\u003e·\u003cweb 패키지\u003e, Git 조직은 \u003corg\u003e로 바꿔 적었습니다."
-category: "미분류"
-categorySlug: "uncategorized"
+description: "이 문서에서 가장 중요한 규칙은 버전 숫자를 여러 곳에 흩어 적지 않는 것입니다. 도구 버전은 .mise.toml·packageManager, 라이브러리 버전은 catalog와 각 package.json 한 곳에서만 결정합니다."
 tags: ["React Native", "Next.js", "개발 도구"]
 publishedAt: "2026-11-01T03:52:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
 manuscriptPages: 64
 ---
 
-> 표기: 패키지 scope는 ` @scope `, workspace 패키지 이름은 ` &lt;app 패키지&gt; `·` &lt;web 패키지&gt; `, Git 조직은 ` &lt;org&gt; `로 바꿔 적었습니다\.
+> 표기: 패키지 scope는 ` @scope `, workspace 패키지 이름은 ` <app 패키지> `·` <web 패키지> `, Git 조직은 ` <org> `로 바꿔 적었습니다\.
 
 ### 결론
 
@@ -24,7 +22,7 @@ manuscriptPages: 64
 - 외부 패키지를 수정할 때는 ` pnpm patch `로 루트 ` patches/ `에 두고 ` patchedDependencies `에 등록합니다\.
 - 버전을 올릴 때는 &quot;최신&quot;보다 &quot;함께 동작하는 조합&quot;을 우선합니다\. 올리지 않은 버전에는 이유를 남깁니다\.
 
-이 문서에서 가장 중요한 규칙은 **버전 숫자를 여러 곳에 흩어 적지 않는 것**입니다\. 도구 버전은 ` .mise.toml `·` packageManager `, 라이브러리 버전은 ` catalog `와 각 ` package.json ` 한 곳에서만 결정합니다\.
+이 문서에서 가장 중요한 규칙은 <strong>버전 숫자를 여러 곳에 흩어 적지 않는 것</strong>입니다\. 도구 버전은 ` .mise.toml `·` packageManager `, 라이브러리 버전은 ` catalog `와 각 ` package.json ` 한 곳에서만 결정합니다\.
 
 ---
 
@@ -81,7 +79,7 @@ CI의 세 workflow는 ` .github/actions/setup-toolchain ` composite action으로
 
 React Native 앱은 Node만으로 빌드되지 않습니다\. iOS는 Ruby\(CocoaPods\), Android는 Java\(Gradle\)가 필요합니다\. 세 도구를 사람마다 따로 설치하면 다음 문제가 생깁니다\.
 
-- macOS 기본 Ruby는 2\.6이라 Bundler 4\(Ruby 3\.2 이상 필요\)를 실행할 수 없습니다\. ` pod install `이 ` Could not find &#39;bundler&#39; (4.0.16) `로 실패합니다\.
+- macOS 기본 Ruby는 2\.6이라 Bundler 4\(Ruby 3\.2 이상 필요\)를 실행할 수 없습니다\. ` pod install `이 ` Could not find 'bundler' (4.0.16) `로 실패합니다\.
 - 시스템 ` pod `\(다른 CocoaPods 버전\)로 설치하면 ` Podfile.lock `의 체크섬이 흔들립니다\.
 - 사람마다 JDK가 다르면 Gradle 결과가 CI와 달라집니다\.
 
@@ -99,7 +97,7 @@ java = "temurin-17.0.21+9"
 셸 hook을 거치지 않는 두 실행 경로도 같은 Node를 쓰게 맞췄습니다\.
 
 - Xcode script phase: ` app/ios/.xcode.env `가 PATH와 ` NODE_BINARY `를 mise shim\(` ~/.local/share/mise/shims/node `\)으로 지정합니다\. shim은 실행 위치에서 위로 올라가며 ` .mise.toml `을 찾으므로, ` app/ios `와 Pods 단계에서도 저장소 Node를 고릅니다\. 예전의 22줄짜리 설치 경로 탐색을 이 한 줄로 바꿨습니다\.
-- Xcode가 띄우는 Metro 창: 로그인 셸의 ` ~/.zprofile `에 ` eval &quot;$(mise activate zsh --shims)&quot; `를 한 번 넣습니다\(README\)\. 예전에는 ` @react-native-community/cli-tools `를 patch해서 Node를 찾게 했지만, 개인 경로가 하드코딩되어 있고 ` .xcode.env `와 로직이 중복돼 지웠습니다\.
+- Xcode가 띄우는 Metro 창: 로그인 셸의 ` ~/.zprofile `에 ` eval "$(mise activate zsh --shims)" `를 한 번 넣습니다\(README\)\. 예전에는 ` @react-native-community/cli-tools `를 patch해서 Node를 찾게 했지만, 개인 경로가 하드코딩되어 있고 ` .xcode.env `와 로직이 중복돼 지웠습니다\.
 
 #### pnpm 버전은 ` packageManager ` 한 곳
 
@@ -235,7 +233,7 @@ patchedDependencies:
 
 ` @react-native-community/cli-tools@20.2.0 ` patch\(Metro 창의 Node 탐색\)는 도구 체인을 정리하면서 지웠습니다\. 이제 ` ~/.zprofile `의 mise shims가 같은 역할을 합니다\.
 
-patch는 정확한 버전에 묶입니다\. 그래서 ` react-native-webview `는 ` ^ ` 없이 ` 13.17.0 `으로 고정합니다\. 대상 버전을 올리려면 ` pnpm patch &lt;pkg&gt;@&lt;새 버전&gt; `으로 patch를 다시 만들어야 합니다\.
+patch는 정확한 버전에 묶입니다\. 그래서 ` react-native-webview `는 ` ^ ` 없이 ` 13.17.0 `으로 고정합니다\. 대상 버전을 올리려면 ` pnpm patch <pkg>@<새 버전> `으로 patch를 다시 만들어야 합니다\.
 
 ---
 

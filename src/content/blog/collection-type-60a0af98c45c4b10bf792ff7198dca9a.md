@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "Collection Type"
-description: "콜렉션 타입"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "배열, 집합, 그리고 딕셔너리를 사용하여 데이터를 구성"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

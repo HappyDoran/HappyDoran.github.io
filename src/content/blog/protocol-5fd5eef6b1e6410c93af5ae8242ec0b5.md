@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "Protocol"
-description: "프로토콜이란?"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "프로토콜은 준수해야하는 타입이 구현해야하는 요구사항을 정의하는 것입니다."
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -18,9 +16,9 @@ manuscriptPages: 19
 
 프로토콜은 요구사항의 구현을 제공하기 위해 클래스, 구조체 또는 열거형에 의해 채택될 수 있습니다\. 프로토콜의 요구사항에 충족하는 모든 타입은 프로토콜에 준수한다고 합니다\.
 
-> 💡 **쉽게 말하면
+> 💡 <strong>쉽게 말하면</strong>
 > 
-> **프로토콜 = 약속
+> 프로토콜 = 약속
 > 밴드를 구성할 때 필요한 것은 보컬, 기타 피아노, 드럼… 이렇게 꼭 필수적으로 필요한 것들을 선언 해두는 것을 프로토콜이라고 합니다\.
 
 ## 프로토콜을 사용하는 이유?
@@ -192,16 +190,16 @@ class SomeSubClass: SomeSuperClass, SomeProtocol {
 }
 ```
 
-> 💡 **Note**
+> 💡 <strong>Note</strong>
 > final 클래스의 경우 하위 클래스가 될 수 없으므로 재정의를 할 수 없습니다\.
 
 ## 타입으로서의 프로토콜
 
 프로토콜은 1급 객체이기 때문에 독립적인 하나의 타입으로 볼 수 있다\.
 
-> 💡 **1급 객체?
+> 💡 <strong>1급 객체?</strong>
 > 
-> **어떤 객체가 독립적인 하나의 타입으로 사용될 수 있다면 이 객체는 1급 객체로 취급된다\.
+> 어떤 객체가 독립적인 하나의 타입으로 사용될 수 있다면 이 객체는 1급 객체로 취급된다\.
 > ex\) Function, Closer, Protocol
 
 ### 변수 타입
@@ -464,7 +462,7 @@ hash를 직접 구현하지 않고 원래 선언을 포함한 파일에서 Hasha
 
 ### Comparable
 
-` &lt;, &lt;=, &gt;, &gt;= ` 제공
+` <, <=, >, >= ` 제공
 
 ```swift
 enum SkillLevel: Comparable {
@@ -525,7 +523,7 @@ protocol SomeClassOnlyProtocol: AnyObject, SomeInheritedProtocol {
 
 동시에 여러개의 프로토콜을 준수하는 타입이 가능합니다\. 
 
-프로토콜의 혼합은 ` SomeProtocol &amp; AnotherProtocol ` 형식으로 가능합니다\.
+프로토콜의 혼합은 ` SomeProtocol & AnotherProtocol ` 형식으로 가능합니다\.
 
 ```swift
 protocol Named {

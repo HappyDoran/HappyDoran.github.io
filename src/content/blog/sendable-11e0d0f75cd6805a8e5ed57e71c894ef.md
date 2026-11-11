@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "@Sendable"
-description: "Actor"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "이렇게 actor 타입을 만들었다. 근데 Actor라는 것도 있다."
 tags: ["Swift", "동시성"]
 publishedAt: "2024-10-13T07:45:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

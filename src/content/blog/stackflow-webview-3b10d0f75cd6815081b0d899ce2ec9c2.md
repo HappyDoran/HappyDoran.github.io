@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "StackFlow 기반 WebView 내비게이션 설계"
-description: "문서 목적"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "WebView 애플리케이션에서 StackFlow로 화면 stack을 구성한 방식을 정리한다. Activity 등록과 타입 계약, URL 동기화와 deep link 복원, 공용 화면 셸, navigation lock, 네이티브 hardware back 연동을 현재 코드 기준으로 다룬다."
 tags: ["React", "Next.js", "아키텍처", "상태 관리"]
 publishedAt: "2026-08-03T09:18:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
@@ -60,7 +58,7 @@ Feature Activity
      -> useStackNavigation (kit hook + popTo 확장)
 ```
 
-route entry는 ` &lt;Stack /&gt; `만 렌더링한다\. middleware가 요청 경로를 header로 넘기고, page가 이를 ` initialContext `로 전달해 서버 렌더링 시점에도 올바른 Activity를 그린다\.
+route entry는 ` <Stack /> `만 렌더링한다\. middleware가 요청 경로를 header로 넘기고, page가 이를 ` initialContext `로 전달해 서버 렌더링 시점에도 올바른 Activity를 그린다\.
 
 StackFlow 공통 동작\(lock, 안전한 action, swipe, screen lifecycle\)은 별도 패키지로 분리했고, Web에는 AppBar·Layout·bridge를 연결하는 adapter만 남겼다\. 분리 배경은 별도 글에서 다룬다\.
 
@@ -106,7 +104,7 @@ const registryMatchesActivities: AssertSameKeys<keyof StackActivityRegistry, Act
 const routes: Record<ActivityName, string | ReturnType<typeof under>> = { /* ... */ };
 ```
 
-registry가 채워지면 ` push(&#39;DetailActivity&#39;, params) `의 이름과 params도 타입으로 검사된다\.
+registry가 채워지면 ` push('DetailActivity', params) `의 이름과 params도 타입으로 검사된다\.
 
 #### deep link에서 부모 화면 깔아 두기
 
@@ -195,7 +193,7 @@ Web adapter가 주입:
 </table>
 </div>
 
-모든 action은 ` globalTransitionState === &#39;idle&#39; `과 lock을 함께 확인한다\. lock은 Zustand store의 ` getState() `로 동기 획득하므로 같은 frame에 들어온 중복 action도 첫 번째만 통과한다\.
+모든 action은 ` globalTransitionState === 'idle' `과 lock을 함께 확인한다\. lock은 Zustand store의 ` getState() `로 동기 획득하므로 같은 frame에 들어온 중복 action도 첫 번째만 통과한다\.
 
 - animated action: 전환이 idle로 돌아오면 ` StackScreen `이 lock을 푼다\.
 - ` animate: false ` action: 이 action이 소유한 token으로 다음 frame에 직접 푼다\.

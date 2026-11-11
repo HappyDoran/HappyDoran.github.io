@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "DocC"
-description: "문서 주석을 작성해야 하는 이유"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "Quick Help를 통해서 다른 소스파일에서 필요한 내용을 확인할 수 있습니다."
 tags: ["Swift", "개발 도구"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -18,7 +16,7 @@ Quick Help를 통해서 다른 소스파일에서 필요한 내용을 확인할 
 
 ![](<../../assets/blog/docc-4069ead936fc45f9aa3fc9b9ff33a1bd/image-001.png>)
 
-**option 클릭 / XCode 우측**
+<strong>option 클릭 / XCode 우측</strong>
 
 필요한 내용들을 적어두면 사용할 때 마다 편리하게 내용을 볼 수 있습니다\.
 

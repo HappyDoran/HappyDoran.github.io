@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "StackFlow 기반 WebView: stackflow-kit 패키지 분리 배경과 설계"
-description: "문서 목적"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "Web 앱 안에 있던 StackFlow 공통 로직(navigation lock, 안전한 action, 스프링 swipe-back, screen lifecycle)을 런타임과 무관한 독립 패키지로 분리한 배경과 설계를 정리한다. 무엇을 패키지로 옮기고 무엇을 앱에 남겼는지, 앱이 패키지를 어떻게 소비·인증·검증하는지, 패키지를 어떻게 갱신하는지를 현재 구현 기준으로 다룬다."
 tags: ["React", "아키텍처", "개발 도구"]
 publishedAt: "2026-11-01T03:51:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
@@ -39,11 +37,11 @@ Web 앱 안에 있던 StackFlow 공통 로직\(navigation lock, 안전한 action
 
 ### 2\. 분리 원칙
 
-1. **런타임 비의존**: 패키지는 WebView, React Native, bridge를 모른다\. host 연동은 adapter 계약으로만 주입받는다\.
-1. **디자인 비의존**: AppBar, layout, CSS framework를 포함하지 않는다\. render prop과 class 주입 지점만 연다\.
-1. **설정은 앱이 소유**: 패키지는 provider나 ` stackflow() ` 설정을 감싸지 않는다\. Activity·route·plugin 조립은 앱에 남긴다\.
-1. **동작 테스트는 패키지가 소유**: lock·swipe·화면 셸의 동작 회귀는 패키지 저장소 CI가 잡고, 앱은 adapter 배선만 테스트한다\.
-1. **좁은 공개 API**: 내부 store는 노출하지 않는다\. 읽기 전용 상태와 제한된 명령만 공개한다\.
+1. <strong>런타임 비의존</strong>: 패키지는 WebView, React Native, bridge를 모른다\. host 연동은 adapter 계약으로만 주입받는다\.
+1. <strong>디자인 비의존</strong>: AppBar, layout, CSS framework를 포함하지 않는다\. render prop과 class 주입 지점만 연다\.
+1. <strong>설정은 앱이 소유</strong>: 패키지는 provider나 ` stackflow() ` 설정을 감싸지 않는다\. Activity·route·plugin 조립은 앱에 남긴다\.
+1. <strong>동작 테스트는 패키지가 소유</strong>: lock·swipe·화면 셸의 동작 회귀는 패키지 저장소 CI가 잡고, 앱은 adapter 배선만 테스트한다\.
+1. <strong>좁은 공개 API</strong>: 내부 store는 노출하지 않는다\. 읽기 전용 상태와 제한된 명령만 공개한다\.
 
 ### 3\. 무엇을 옮기고 무엇을 남겼나
 
@@ -81,7 +79,7 @@ declare module '@scope/stackflow-kit' {
 }
 ```
 
-이렇게 하면 ` push(&#39;DetailActivity&#39;, { itemId }) `의 이름과 params가 앱의 registry 기준으로 타입 검사된다\. 패키지는 provider를 추가하지 않고, 앱이 기존 ` stackflow() ` 설정에 ` transitionDuration: STACK_TRANSITION_DURATION_MS `만 넘긴다\.
+이렇게 하면 ` push('DetailActivity', { itemId }) `의 이름과 params가 앱의 registry 기준으로 타입 검사된다\. 패키지는 provider를 추가하지 않고, 앱이 기존 ` stackflow() ` 설정에 ` transitionDuration: STACK_TRANSITION_DURATION_MS `만 넘긴다\.
 
 #### 화면 셸: render prop 주입
 
@@ -153,7 +151,7 @@ kit에는 여러 화면을 전환과 함께 한 번에 닫는 동작이 없다\.
 
 ### 6\. 배포 방식: 레지스트리 대신 고정 commit
 
-패키지는 npm 레지스트리에 publish하지 않고, private Git 저장소의 **40자 commit SHA**로 설치한다\.
+패키지는 npm 레지스트리에 publish하지 않고, private Git 저장소의 <strong>40자 commit SHA</strong>로 설치한다\.
 
 ```json
 {
@@ -182,11 +180,11 @@ kit에는 여러 화면을 전환과 함께 한 번에 닫는 동작이 없다\.
 
 한 번에 저장소를 옮기지 않고, 각 단계마다 앱의 전체 검증\(lint, structure, typecheck, test, build, E2E\)을 통과시키며 다섯 단계로 나눴다\.
 
-1. **workspace 패키지로 추출**: lock, 안전한 action, 스프링 swipe를 같은 저장소의 ` packages/stackflow-kit `으로 옮기고 Web은 public export만 쓰게 했다\. 패키지가 앱 코드를 import하지 못하도록 harness 검사를 함께 넣었다\.
-1. **runtime adapter 경계 분리**: 화면 lifecycle과 최소 DOM 구조를 패키지로 옮기고, AppBar·Layout·스타일은 render prop으로 주입하게 했다\. 패키지 기본값은 bridge 없는 브라우저 동작이고, Web adapter가 stack 상태 발행과 native back 이벤트를 기존 guarded pop 경로에 연결한다\.
-1. **배포 계약 안정화**: Activity별 params 타입 registry와 제한된 lock API를 공개하고, ESM·declaration 산출물, CSS export를 구성했다\. 실제 tarball을 Next\.js·Vite fixture에 설치해 검증하는 단계를 CI에 넣었다\.
-1. **외부 저장소로 소비 전환**: private 배포본과 public 공개 준비본의 역할을 나누고, Web이 private 저장소의 검증된 commit을 직접 설치하게 바꿨다\. CI에 읽기 전용 secret을 추가했다\.
-1. **source 소유권 완전 분리**: 앱 저장소의 로컬 사본과 패키지 전용 검증을 지우고, commit 소비 계약과 인증 운영 문서만 남겼다\. 이때 처리 화면에 남아 있던 raw ` useActions ` 호출도 kit navigation으로 바꿔, 전환 중 도착한 결과는 idle까지 보류하고 화면을 떠난 뒤 늦게 온 결과는 버리게 했다\.
+1. <strong>workspace 패키지로 추출</strong>: lock, 안전한 action, 스프링 swipe를 같은 저장소의 ` packages/stackflow-kit `으로 옮기고 Web은 public export만 쓰게 했다\. 패키지가 앱 코드를 import하지 못하도록 harness 검사를 함께 넣었다\.
+1. <strong>runtime adapter 경계 분리</strong>: 화면 lifecycle과 최소 DOM 구조를 패키지로 옮기고, AppBar·Layout·스타일은 render prop으로 주입하게 했다\. 패키지 기본값은 bridge 없는 브라우저 동작이고, Web adapter가 stack 상태 발행과 native back 이벤트를 기존 guarded pop 경로에 연결한다\.
+1. <strong>배포 계약 안정화</strong>: Activity별 params 타입 registry와 제한된 lock API를 공개하고, ESM·declaration 산출물, CSS export를 구성했다\. 실제 tarball을 Next\.js·Vite fixture에 설치해 검증하는 단계를 CI에 넣었다\.
+1. <strong>외부 저장소로 소비 전환</strong>: private 배포본과 public 공개 준비본의 역할을 나누고, Web이 private 저장소의 검증된 commit을 직접 설치하게 바꿨다\. CI에 읽기 전용 secret을 추가했다\.
+1. <strong>source 소유권 완전 분리</strong>: 앱 저장소의 로컬 사본과 패키지 전용 검증을 지우고, commit 소비 계약과 인증 운영 문서만 남겼다\. 이때 처리 화면에 남아 있던 raw ` useActions ` 호출도 kit navigation으로 바꿔, 전환 중 도착한 결과는 idle까지 보류하고 화면을 떠난 뒤 늦게 온 결과는 버리게 했다\.
 
 #### 버전 정책
 
@@ -213,7 +211,7 @@ PR 검증, App·shared 검증, Web 배포 세 workflow가 repository secret으�
 1. checkout의 ` persist-credentials `를 끈다\.
 1. composite action이 SSH Git URL을 token이 담긴 HTTPS URL로 치환한다\.
 1. ` pnpm install --frozen-lockfile `
-1. **설치 직후 **` $HOME/.gitconfig `**를 지운다**\(` if: always() `\)\.
+1. <strong>설치 직후 </strong>` $HOME/.gitconfig `<strong>를 지운다</strong>\(` if: always() `\)\.
 
 4번이 핵심이다\. 이 단계가 없으면 이후의 test·build·E2E, 즉 PR이 작성한 코드가 token을 읽을 수 있다\. 설치 단계의 lifecycle script는 여전히 token 사정권 안이므로 PR의 ` package.json ` 변경은 리뷰에서 확인한다\. secret을 받지 못하는 fork·Dependabot PR은 인증 단계에서 원인을 출력하고 실패한다\.
 

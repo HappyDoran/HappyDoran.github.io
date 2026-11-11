@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "React Hooks (1)"
-description: "React Hooks 이란?"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "함수형 컴포넌트에서 React의 상태와 생명주기의 기능을 연동할 수 있게 해주는 함수"
 tags: ["React", "상태 관리"]
 publishedAt: "2025-04-06T06:18:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -14,9 +12,9 @@ manuscriptPages: 28
 
 함수형 컴포넌트에서 React의 상태와 생명주기의 기능을 연동할 수 있게 해주는 함수
 
-useState, useEffect와 같은 **내장 훅**과 사용자가 이 훅을 이용해서 정의할 수 있는 **Custom Hook** 존재\.
+useState, useEffect와 같은 <strong>내장 훅</strong>과 사용자가 이 훅을 이용해서 정의할 수 있는 <strong>Custom Hook</strong> 존재\.
 
-> 💡 **함수형 컴포넌트?**
+> 💡 <strong>함수형 컴포넌트?</strong>
 > 
 > ```javascript
 > function Welcome(props) {
@@ -24,7 +22,7 @@ useState, useEffect와 같은 **내장 훅**과 사용자가 이 훅을 이용�
 > }
 > ```
 
-> 💡 **React의 생명주기?**
+> 💡 <strong>React의 생명주기?</strong>
 > 
 > 
 > React에서의 생명주기는 React 컴포넌트가 브라우저 DOM에 렌더링되는 순간부터 제거되는 순간까지의 여러 단계를 말한다\.
@@ -38,7 +36,7 @@ useState, useEffect와 같은 **내장 훅**과 사용자가 이 훅을 이용�
 
 재사용 컴포넌트를 구현하기 힘들고, 컴포넌트가 복잡함
 
-> 💡 **클래스형 컴포넌트?**
+> 💡 <strong>클래스형 컴포넌트?</strong>
 > 
 > ```javascript
 > class Welcome extends React.Component {
@@ -80,7 +78,7 @@ function ProfileForm() {
 
 ### 2\. 컴포넌트 내부 최상위에서만 호출할 수 있다\. 
 
-**잘못된 사용**
+<strong>잘못된 사용</strong>
 
 ```javascript
 function Counter() {
@@ -105,7 +103,7 @@ function Counter() {
 }
 ```
 
-**올바른 사용**
+<strong>올바른 사용</strong>
 
 ```javascript
 function Counter() {
@@ -161,7 +159,7 @@ function Counter() {
 
 ### 3\. Hook은 React 함수 내에서만 호출할 수 있다\.
 
-**잘못된 사용**
+<strong>잘못된 사용</strong>
 
 ```javascript
 // 🚫 일반 JavaScript 함수에서 훅 호출 - 규칙 위반!
@@ -179,7 +177,7 @@ class Counter extends React.Component {
 }
 ```
 
-**올바른 사용**
+<strong>올바른 사용</strong>
 
 ```javascript
 // ✅ 함수형 컴포넌트에서 훅 사용
@@ -217,7 +215,7 @@ function WindowSizeDisplay() {
 
 ### 4\. 비동기 함수는 콜백함수로 사용할 수 없다\.
 
-**잘못된 사용**
+<strong>잘못된 사용</strong>
 
 ```javascript
 function UserData() {
@@ -234,7 +232,7 @@ function UserData() {
 }
 ```
 
-**올바른 사용**
+<strong>올바른 사용</strong>
 
 ```javascript
 function UserData() {
@@ -277,7 +275,7 @@ setNumber\(setter 함수\)에 의해 상태값이 변경이 될 경우엔 리렌
 
 컴포넌트 내의 ` 상태의 변화가 있을 때, 이를 감지하여 특정 작업을 해줄 수 있는 훅 `이다\. 보통은 Side Effect를 처리하기 위해서 사용된다\.
 
-> 💡 **Side Effect란?**
+> 💡 <strong>Side Effect란?</strong>
 > 
 > 
 > Side Effect는 React 컴포넌트의 주요 역할인 “UI 렌더링” 이외의 모든 작업을 의미한다\.
@@ -315,13 +313,13 @@ useEffect(()=>{
 
 useEffect와 비슷하지만 ` 실행 타이밍 `에서 중요한 차이가 있다\.
 
-**useEffect**
+<strong>useEffect</strong>
 
 컴포넌트 렌더링 → 화면 업데이트 → useEffect를 비동기적으로 실행
 
 비동기적으로 실행이 되므로 성능에 유리하다\.
 
-**useLayoutEffect**
+<strong>useLayoutEffect</strong>
 
  컴포넌트 렌더링 → useLayoutEffect를 동기적으로 실행 → 화면 업데이트
 
@@ -551,8 +549,8 @@ function Timer() {
 
 #### useRef의 작동 원리 쉽게 이해하기
 
-> 💡 **기본적으로 useRef는 “박스”라고 생각하면 된다\.
-> **
+> 💡 <strong>기본적으로 useRef는 “박스”라고 생각하면 된다\.</strong>
+> 
 > 
 > ```javascript
 > ┌───────────────────┐
@@ -626,7 +624,7 @@ function ExpensiveCalculation({ numbers }) {
 useMemo를 사용하지 않으면, 리렌더링될 때마다 calculateSum이 다시 실행된다\. 
 하지만 useMemo를 사용함으로써 number값\(의존성 배열에 들어있는 값\)이 바뀔 때만 calculateSum이 실행되고, 그 외에는 이전에 계산된 값을 재사용한다\.
 
-> 💡 **그렇다면 useMemo를 이용한 변수는 상태값인가?**
+> 💡 <strong>그렇다면 useMemo를 이용한 변수는 상태값인가?</strong>
 > 
 > 상태값이랑은 조금 별개로 메모이제이션된 값을 반환하는 훅이다\. ` 특정 값이나 연산의 결과를 기억 `하여, ` 의존성이 변경되지 않으면 이전에 계산된 값을 재사용 `한다\.
 > 
@@ -663,21 +661,21 @@ export default App;
 
 이렇게 할 경우에 버튼을 클릭하여 부모 컴포넌트가 리렌더링이 되어도, 메모이즈된 Box 컴포넌트는 리렌더링 되지 않는다\.
 
-> 💡 **useMemo와 React\.Memo의 차이점
+> 💡 <strong>useMemo와 React\.Memo의 차이점</strong>
 > 
-> **
 > 
-> **useMemo**
 > 
-> - **대상**: 값이나 계산 결과
-> - **목적**: 계산 비용이 큰 연산 결과를 재사용
-> - **언제 사용**: 복잡한 계산이나 데이터 변환이 필요할 때
+> <strong>useMemo</strong>
 > 
-> **React\.memo**
+> - <strong>대상</strong>: 값이나 계산 결과
+> - <strong>목적</strong>: 계산 비용이 큰 연산 결과를 재사용
+> - <strong>언제 사용</strong>: 복잡한 계산이나 데이터 변환이 필요할 때
 > 
-> - **대상**: 컴포넌트 자체
-> - **목적**: 불필요한 컴포넌트 리렌더링 방지
-> - **언제 사용**: 부모 컴포넌트가 자주 리렌더링되지만, 자식 컴포넌트의 props는 자주 변경되지 않을 때
+> <strong>React\.memo</strong>
+> 
+> - <strong>대상</strong>: 컴포넌트 자체
+> - <strong>목적</strong>: 불필요한 컴포넌트 리렌더링 방지
+> - <strong>언제 사용</strong>: 부모 컴포넌트가 자주 리렌더링되지만, 자식 컴포넌트의 props는 자주 변경되지 않을 때
 
 ### useCallback
 
@@ -741,7 +739,7 @@ export default App;
 
  
 
-> 💡 **useCallback을 사용할 때의 유의점**
+> 💡 <strong>useCallback을 사용할 때의 유의점</strong>
 > 
 > 이전의 상태를 사용해서 새 상태를 계산하는 경우에, useCallback을 사용하게 된다면 의존성 배열을 넘기고, setData로 state를 초기화 해줄 때, 함수형 업데이트로 초기화를 해주어야 한다\.
 > 
@@ -761,17 +759,17 @@ const incrementBetter = useCallback(() => {
 
 ## React Hook 정리
 
-**useState**: 컴포넌트에 ` 상태 `를 추가하여 변경 가능한 값을 관리하고 업데이트할 수 있게 해주는 Hook
+<strong>useState</strong>: 컴포넌트에 ` 상태 `를 추가하여 변경 가능한 값을 관리하고 업데이트할 수 있게 해주는 Hook
 
-**useEffect**: 컴포넌트의 렌더링 이후에 ` 부수 효과(side effect) `를 실행할 수 있게 해주는 Hook
+<strong>useEffect</strong>: 컴포넌트의 렌더링 이후에 ` 부수 효과(side effect) `를 실행할 수 있게 해주는 Hook
 
-**useRef**: 렌더링 사이에 ` 지속되는 변경 가능한 값 `을 저장하고, DOM 요소에 직접 접근할 수 있게 해주는 Hook
+<strong>useRef</strong>: 렌더링 사이에 ` 지속되는 변경 가능한 값 `을 저장하고, DOM 요소에 직접 접근할 수 있게 해주는 Hook
 
-**useMemo**: ` 계산 비용이 높은 값 `을 메모이제이션하여 의존성이 변경될 때만 재계산하는 성능 최적화 Hook
+<strong>useMemo</strong>: ` 계산 비용이 높은 값 `을 메모이제이션하여 의존성이 변경될 때만 재계산하는 성능 최적화 Hook
 
-**React\.memo**: ` 컴포넌트 `를 메모이제이션하여 props가 변경되지 않으면 리렌더링을 방지하는 고차 컴포넌트
+<strong>React\.memo</strong>: ` 컴포넌트 `를 메모이제이션하여 props가 변경되지 않으면 리렌더링을 방지하는 고차 컴포넌트
 
-**useCallback**: ` 함수 `를 메모이제이션하여 의존성이 변경될 때만 함수를 재생성하는 성능 최적화 Hook
+<strong>useCallback</strong>: ` 함수 `를 메모이제이션하여 의존성이 변경될 때만 함수를 재생성하는 성능 최적화 Hook
 
 ## 참고
 

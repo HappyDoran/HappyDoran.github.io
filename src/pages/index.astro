@@ -2,13 +2,13 @@
 import { getCollection } from "astro:content";
 import PostCard from "../components/PostCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { categoriesFor, pathFor, site, sortPosts } from "../lib/blog";
+import { pathFor, site, sortPosts, tagsFor } from "../lib/blog";
 
 const posts = sortPosts(await getCollection("blog"));
 // 고정 글(R10)은 최신 글 위에 따로 두고 최신 글에서는 뺀다.
 const pinnedPosts = posts.filter((post) => post.data.pinned);
 const latestPosts = posts.filter((post) => !post.data.pinned).slice(0, 12);
-const categories = categoriesFor(posts);
+const tagCount = tagsFor(posts).length;
 ---
 <BaseLayout title="홈" description={site.description || undefined}>
   <section class="hero" aria-labelledby="site-title">
@@ -21,7 +21,7 @@ const categories = categoriesFor(posts);
     )}
     <dl class="hero-stats" aria-label="블로그 통계">
       <div><dt>글</dt><dd>{posts.length}</dd></div>
-      <div><dt>주제</dt><dd>{categories.length}</dd></div>
+      <div><dt>태그</dt><dd>{tagCount}</dd></div>
     </dl>
   </section>
   {posts.length === 0 ? (
@@ -49,21 +49,6 @@ const categories = categoriesFor(posts);
         <div class="post-grid">
           {latestPosts.map((post) => <PostCard headingLevel="h3" post={post} />)}
         </div>
-      </section>
-      <section aria-labelledby="categories-title">
-        <div class="section-heading">
-          <h2 id="categories-title">주제</h2>
-        </div>
-        <ul class="category-list">
-          {categories.map((category) => (
-            <li>
-              <a href={pathFor("categories/" + category.slug + "/")}>
-                <span>{category.name}</span>
-                <span class="muted">{category.count}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
       </section>
     </>
   )}

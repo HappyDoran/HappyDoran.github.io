@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "Tailwind에서 SwiftUI의 레이아웃 방식"
 description: "Tailwind CSS에서 SwiftUI의 VStack과 HStack과 같은 레이아웃 구조를 구현하려면 Flexbox 속성을 활용하면 된다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["CSS", "SwiftUI"]
 publishedAt: "2025-04-10T05:01:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

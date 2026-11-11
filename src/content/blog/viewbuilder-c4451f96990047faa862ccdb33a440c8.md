@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "ViewBuilder"
-description: "@ViewBuilder란?"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "Closure에서 뷰를 구성하는 Custom parameter attribute"
 tags: ["Swift", "SwiftUI"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -85,11 +83,11 @@ where Content: View {
 
 ![](<../../assets/blog/viewbuilder-c4451f96990047faa862ccdb33a440c8/image-001.png>)
 
-**&lt;Content&gt;: View where Content: View가 무슨 소린지 모르겠네요…**
+<strong>&lt;Content&gt;: View where Content: View가 무슨 소린지 모르겠네요…</strong>
 
 제네릭 구조체로 Content라는 제네릭 타입을 사용하는 Content인데 View 프로토콜을 준수
 
-**@ViewBuilder content: @escaping \(\) \-&gt; Content 여기도 무슨 소린지 모르겠습니다\.**
+<strong>@ViewBuilder content: @escaping \(\) \-&gt; Content 여기도 무슨 소린지 모르겠습니다\.</strong>
 
 Content 자체를  @ViewBuilder 파라미터를 사용하여 ChildView로 만들어주는 방법이 있습니다\.
 

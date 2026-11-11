@@ -3,11 +3,14 @@ import { getCollection } from "astro:content";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import PostCard from "../../components/PostCard.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { base, pathFor, sortPosts } from "../../lib/blog";
+import { base, pathFor, sortPosts, tagSlug, tagsFor } from "../../lib/blog";
 
 const posts = sortPosts(await getCollection("blog"));
+const tags = tagsFor(posts);
+const searchText = (post: (typeof posts)[number]) =>
+  [post.data.title, post.data.description, ...post.data.tags].join(" ").normalize("NFKC").toLowerCase();
 ---
-<BaseLayout description="게시된 모든 글을 최신순으로 봅니다." title="전체 글">
+<BaseLayout description="게시된 모든 글을 검색하고 태그로 거릅니다." title="전체 글">
   <Breadcrumbs items={[{ href: base, label: "홈" }, { label: "전체 글" }]} />
   <header class="page-intro">
     <h1>전체 글</h1>
@@ -19,6 +22,118 @@ const posts = sortPosts(await getCollection("blog"));
       <p>새 글이 게시되면 이곳에 표시됩니다.</p>
     </section>
   ) : (
-    <div class="post-list">{posts.map((post) => <PostCard post={post} />)}</div>
+    <>
+      <form class="post-search" role="search" action={pathFor("posts/")} data-post-search>
+        <label for="post-query">글 검색</label>
+        <input id="post-query" name="q" type="search" autocomplete="off" placeholder="제목·설명·태그로 찾기" />
+      </form>
+      {tags.length > 0 && (
+        <nav class="tag-filter" aria-label="태그로 거르기">
+          <ul class="category-list">
+            <li><a href={pathFor("posts/")} data-tag-filter="">전체 <span class="muted">{posts.length}</span></a></li>
+            {tags.map((tag) => (
+              <li><a href={pathFor("posts/?tag=" + tag.slug)} data-tag-filter={tag.slug}>#{tag.name} <span class="muted">{tag.count}</span></a></li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      <p class="post-status muted" role="status" data-post-status></p>
+      <div class="post-list">
+        {posts.map((post) => (
+          <div data-post data-search={searchText(post)} data-tags={post.data.tags.map(tagSlug).join(" ")}>
+            <PostCard post={post} />
+          </div>
+        ))}
+      </div>
+      <nav class="pagination" aria-label="쪽 이동" data-pagination hidden></nav>
+    </>
   )}
 </BaseLayout>
+<script>
+  // 검색·태그 거르기·쪽 나누기(R9). JavaScript가 없으면 모든 글이 그대로 보인다.
+  // 상태는 주소 query(q, tag, page)에 두어 새로고침·공유해도 같다.
+  const PAGE_SIZE = 10;
+  const items = [...document.querySelectorAll<HTMLElement>("[data-post]")];
+  const form = document.querySelector<HTMLFormElement>("[data-post-search]");
+  const input = document.querySelector<HTMLInputElement>("#post-query");
+  const status = document.querySelector<HTMLElement>("[data-post-status]");
+  const pager = document.querySelector<HTMLElement>("[data-pagination]");
+  const tagLinks = [...document.querySelectorAll<HTMLAnchorElement>("[data-tag-filter]")];
+  const normalize = (value: string) => value.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
+
+  function read() {
+    const params = new URLSearchParams(location.search);
+    const page = Number.parseInt(params.get("page") ?? "1", 10);
+    return { page: Number.isFinite(page) && page > 0 ? page : 1, q: params.get("q") ?? "", tag: params.get("tag") ?? "" };
+  }
+
+  function write(next: { page: number; q: string; tag: string }) {
+    const params = new URLSearchParams();
+    if (next.q) params.set("q", next.q);
+    if (next.tag) params.set("tag", next.tag);
+    if (next.page > 1) params.set("page", String(next.page));
+    const query = params.toString();
+    history.replaceState(null, "", location.pathname + (query ? "?" + query : ""));
+    render();
+  }
+
+  function pageButton(label: string, page: number, ariaLabel: string, options: { current?: boolean; disabled?: boolean } = {}) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.setAttribute("aria-label", ariaLabel);
+    button.disabled = options.disabled === true;
+    if (options.current === true) button.setAttribute("aria-current", "page");
+    button.addEventListener("click", () => {
+      write({ ...read(), page });
+      document.querySelector(".page-intro")?.scrollIntoView();
+    });
+    return button;
+  }
+
+  function render() {
+    const { page, q, tag } = read();
+    if (input && input.value !== q) input.value = q;
+    const terms = normalize(q).split(" ").filter(Boolean);
+    const matched = items.filter(
+      (item) =>
+        (tag === "" || (item.dataset.tags ?? "").split(" ").includes(tag)) &&
+        terms.every((term) => (item.dataset.search ?? "").includes(term)),
+    );
+    const pages = Math.max(1, Math.ceil(matched.length / PAGE_SIZE));
+    const current = Math.min(page, pages);
+    const shown = new Set(matched.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE));
+    for (const item of items) item.hidden = !shown.has(item);
+    for (const link of tagLinks) {
+      if (link.dataset.tagFilter === tag) link.setAttribute("aria-current", "true");
+      else link.removeAttribute("aria-current");
+    }
+    if (status) {
+      status.textContent =
+        matched.length === 0
+          ? "조건에 맞는 글이 없습니다."
+          : "글 " + matched.length + "개" + (pages > 1 ? " · " + current + "/" + pages + "쪽" : "");
+    }
+    if (pager) {
+      pager.replaceChildren();
+      pager.hidden = pages <= 1;
+      if (pages > 1) {
+        pager.append(pageButton("이전", current - 1, "이전 쪽", { disabled: current === 1 }));
+        for (let number = 1; number <= pages; number += 1) {
+          pager.append(pageButton(String(number), number, number + "쪽", { current: number === current }));
+        }
+        pager.append(pageButton("다음", current + 1, "다음 쪽", { disabled: current === pages }));
+      }
+    }
+  }
+
+  form?.addEventListener("submit", (event) => event.preventDefault());
+  input?.addEventListener("input", () => write({ ...read(), page: 1, q: input.value }));
+  for (const link of tagLinks) {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      write({ ...read(), page: 1, tag: link.dataset.tagFilter ?? "" });
+    });
+  }
+  render();
+</script>

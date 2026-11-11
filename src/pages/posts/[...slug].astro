@@ -2,7 +2,7 @@
 import { getCollection, render } from "astro:content";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { base, formatDate, isDifferentDay, pathFor, seriesFor, siteOwner, sortPosts, tagSlug } from "../../lib/blog";
+import { base, formatDate, isDifferentDay, pathFor, siteOwner, sortPosts, tagPath } from "../../lib/blog";
 
 export async function getStaticPaths() {
   const posts = sortPosts(await getCollection("blog"));
@@ -15,24 +15,20 @@ export async function getStaticPaths() {
 const { allPosts, post } = Astro.props;
 const { Content, headings } = await render(post);
 const sectionHeadings = headings.filter((heading) => heading.depth === 2);
-// 시리즈 글은 시리즈 순서로, 아니면 같은 카테고리의 게시일 순으로 이전·다음 글을 고른다.
-const series = seriesFor(allPosts).find((candidate) => candidate.slug === post.data.seriesSlug);
-const sequence = series?.posts ?? allPosts.filter((candidate) => candidate.data.categorySlug === post.data.categorySlug);
-const currentIndex = sequence.findIndex((candidate) => candidate.id === post.id);
-const previousPost = currentIndex > 0 ? sequence[currentIndex - 1] : undefined;
-const nextPost = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1] : undefined;
+// 이전 글은 바로 더 오래된 글, 다음 글은 바로 더 새 글이다(allPosts는 최신순).
+const currentIndex = allPosts.findIndex((candidate) => candidate.id === post.id);
+const previousPost = allPosts[currentIndex + 1];
+const nextPost = currentIndex > 0 ? allPosts[currentIndex - 1] : undefined;
 ---
 <BaseLayout description={post.data.description} title={post.data.title} type="article">
   <Breadcrumbs items={[
     { href: base, label: "홈" },
-    { href: pathFor("categories/" + post.data.categorySlug + "/"), label: post.data.category },
+    { href: pathFor("posts/"), label: "전체 글" },
     { label: post.data.title },
   ]} />
   <article class:list={["article-layout", sectionHeadings.length >= 3 ? "with-toc" : "without-toc"]}>
     <header class="post-header">
-      <a class="category-link" href={pathFor("categories/" + post.data.categorySlug + "/")}>{post.data.category}</a>
       <h1>{post.data.title}</h1>
-      {post.data.description && <p class="post-description">{post.data.description}</p>}
       <div class="post-meta">
         <span>게시 <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time></span>
         {isDifferentDay(post.data.publishedAt, post.data.updatedAt) && (
@@ -42,7 +38,7 @@ const nextPost = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1]
       </div>
       {post.data.tags.length > 0 && (
         <ul class="tag-list" aria-label="태그">
-          {post.data.tags.map((tag) => <li><a href={pathFor("tags/" + tagSlug(tag) + "/")}>#{tag}</a></li>)}
+          {post.data.tags.map((tag) => <li><a href={tagPath(tag)}>#{tag}</a></li>)}
         </ul>
       )}
     </header>
@@ -53,22 +49,6 @@ const nextPost = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1]
       </nav>
     )}
     <div class="article-main">
-      {series !== undefined && (
-        <nav class="series-nav" aria-labelledby="series-title">
-          <h2 id="series-title"><a href={pathFor("series/" + series.slug + "/")}>시리즈 · {series.name}</a> <span class="muted">{currentIndex + 1}/{series.posts.length}</span></h2>
-          <ol>
-            {series.posts.map((item) => (
-              <li>
-                {item.id === post.id ? (
-                  <span aria-current="page">{item.data.title}</span>
-                ) : (
-                  <a href={pathFor("posts/" + item.id + "/")}>{item.data.title}</a>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
-      )}
       <div class="post-body"><Content /></div>
       <p class="post-end">(끝)</p>
       <footer class="post-colophon" aria-labelledby="colophon-title">
@@ -85,7 +65,7 @@ const nextPost = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1]
         </dl>
       </footer>
       {(previousPost !== undefined || nextPost !== undefined) && (
-        <nav class="post-navigation" aria-label={series === undefined ? "같은 카테고리의 이전 및 다음 글" : "같은 시리즈의 이전 및 다음 글"}>
+        <nav class="post-navigation" aria-label="이전 및 다음 글">
           <div>{previousPost && <a href={pathFor("posts/" + previousPost.id + "/")}><small>← 이전 글</small>{previousPost.data.title}</a>}</div>
           <div class="next">{nextPost && <a href={pathFor("posts/" + nextPost.id + "/")}><small>다음 글 →</small>{nextPost.data.title}</a>}</div>
         </nav>

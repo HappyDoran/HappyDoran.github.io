@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "Observation"
 description: "Observation은 Swift에서 observer 디자인 패턴의 견고하고 유형이 안전하며 성능이 뛰어난 구현을 제공합니다. 이 패턴을 사용하면 관찰 가능한 객체가 observer 목록을 유지하고 특정 또는 일반적인 상태 변경 사항을 알릴 수 있습니다. 이는 객체를 직접 결합하지 않고 잠재적인 여러 observer에 업데이트를 암묵적으로 분배할 수 있다는 장점이 있습니다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["Swift", "SwiftUI", "상태 관리"]
 publishedAt: "2024-09-05T11:37:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

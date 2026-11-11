@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "StateObject \u0026 ObservedObject"
-description: "StateObject"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "Observable object를 생성하는 프로퍼티 래퍼 타입."
 tags: ["SwiftUI", "상태 관리"]
 publishedAt: "2024-08-27T07:14:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -39,7 +37,7 @@ struct MyView: View {
 
 SwiftUI는 state object를 선언하는 컨테이너의 라이프타임 동안 오직 한 번만 모델 객체의 새 인스턴스를 생성한다\. 예를 들어, SwiftUI는 뷰의 입력이 변한다고 해도 새 인스턴스를 생성하지 않지만, 뷰의 ID가 변경되면 새 인스턴스를 만듭니다\. Observable object의 published 프로퍼티가 바뀔 때, SwiftUI는 그 프로퍼티를 의존한 모든 뷰를 업데이트한다\. 위의 텍스트 같이\.
 
-> **Note**
+> <strong>Note</strong>
 > 만약 구조체, 문자열, 정수와 같은 값 타입을 저장하고 싶으면, State 프로퍼티 래퍼를 대신 사용해라\. 또한 Observable\(\) 프로토콜을 채택하는 참조 타입을 저장하고 싶어도 State를 써라\. To learn more about Observation in SwiftUI, see [Managing model data in your app](<https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app>)\.
 
 ### Share state objects with subviews
@@ -90,7 +88,7 @@ struct MyInitializableView: View {
 
 명시적 state object 생성자는 객체가 의존하는 외부 데이터가 객체 컨테이너의 주어진 인스턴스에 대해 변경되지 않을 때 잘 작동합니다\. 예를 들어 상수 이름이 다른 두개의 뷰를 만들 수 있습니다\.
 
-> **Important**
+> <strong>Important</strong>
 > 생성 가능한 state object의 경우에도, private로 선언해라\. 이렇게 하면 뷰의 멤버와이즈 이니셜라이저를 통해 실수로 매개 매개변수를 설정할 수 없습니다\. 왜냐하면 그렇게 하면 프레임워크의 저장소 관리와 충돌하고 예상치 못한 결과를 초래할 수 있기 때문입니다\.
 
 ### Force reinitialization by changing view identity
@@ -102,7 +100,7 @@ MyInitializableView(name: name)
     .id(name) // Binds the identity of the view to the name property.
 ```
 
-> **Note**
+> <strong>Note</strong>
 > 만약 뷰가 내부에 ForEach를 가진다면, 뷰는 해당 데이터 요소의 ID를 사용하는 id\(\) Modifier를 암시적으로 받습니다\.
 
 만약 하나 이상의 값의 변경사항게 기반하여 상태를 재생성하고 싶다면 Hasher를 사용한 단일 ID에 값을 결합할 수 있다\. 예를 들어, 만약 name이나 isEnabled의 값이 병경 될 때 MyInitializableView에 데이터 모델을 업데이트 하고 싶다면, 단일 해시에 두 변수를 결합할 수 있다:
@@ -127,7 +125,7 @@ MyInitializableView(name: name, isEnabled: isEnabled)
 
 ## ObservedObject
 
-**observable object를 구독하고 observable object가 바뀔 때마다 뷰를 무효화하는 프로퍼티 래퍼**
+<strong>observable object를 구독하고 observable object가 바뀔 때마다 뷰를 무효화하는 프로퍼티 래퍼</strong>
 
 ## Overview
 
@@ -167,7 +165,7 @@ ObservableObject의 모든 Published 프로퍼티가 바뀔 때, SwiftUI는 그 
 
 observed object에 대한 기본 또는 초기 값을 특정하지 마라\. 위의 예에서와 같이 뷰의 입력 역할을 하는 프로퍼티에서만 이 래퍼를 사용해라\.
 
-> **Note**
+> <strong>Note</strong>
 > @Observable 프로토콜을 채택하는 객체에 @ObservedObject를 쓰지 말아라\. SwiftUI는 자동적으로 body 내부에 사용된 @Observable 객체의 의존성을 추적하고 그 객체의 데이터가 바뀔 때 의존하는 뷰를 업데이트한다\. @Observable 객체를 @ObservedObject 객체로 감싸려고 시도하는 것은 컴파일 에러를 유발할 수도 있다\. 왜냐하면 ObservableObject 프로토콜을 채택한 객체에 ObservedObject를 쓸 수 있기 때문이다\.
 > 
 > 만약 body에 Observable 객체의 프로퍼티에 바인딩을 하고 싶다면, Bindable 프로퍼티 래퍼를 대신 써라; 예를 들어, @Bindable var model: DataModel 이런 식으로\. 더 많은 정보를 얻고 싶으면 [Managing model data in your app](<https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app>)\. 이거를 봐라

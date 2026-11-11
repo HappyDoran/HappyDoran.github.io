@@ -1,17 +1,15 @@
 ---
 schemaVersion: 2
 title: "WWDC) Introducing Combine"
-description: "Introducing Combine"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "WWDC) Introducing Combine"
 tags: ["Swift", "동시성", "상태 관리"]
 publishedAt: "2024-12-27T15:09:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
 manuscriptPages: 33
 ---
 
-> 💡 **Combine?
-> **비동기 작업을 처리하는 데 있어 기존보다 더 나은 방식을 제공해주는 도구
+> 💡 <strong>Combine?</strong>
+> 비동기 작업을 처리하는 데 있어 기존보다 더 나은 방식을 제공해주는 도구
 > 
 > 
 > 기존이라고 하면, Completion Handler, GCD, Notification Center, Delegate 등
@@ -26,7 +24,7 @@ manuscriptPages: 33
 
 - 사용자 이름을 입력하면 Target/Action을 통해 사용자의 입력에 대한 알림을 받는다\.
 - 입력한 이름이 유효한 이름인지 서버를 통해 확인하기 위해 네트워크 통신을 한다\.
-- 근데 이때 **그냥 네트워크 통신을 하는게 아니라, Timer를 사용해서 사용자의 네트워크 요청이 서버에 과부하를 주지 않기 위해 사용자의 입력이 멈추면 비동기 네트워크 통신**을 진행한다\.
+- 근데 이때 <strong>그냥 네트워크 통신을 하는게 아니라, Timer를 사용해서 사용자의 네트워크 요청이 서버에 과부하를 주지 않기 위해 사용자의 입력이 멈추면 비동기 네트워크 통신</strong>을 진행한다\.
 - KVO \(작업 진행률을 나타내는 로딩같은 것\)으로 비동기 작업에 대한 진행률 업데이트도 수신할 수 있다\.
 
 ![](<../../assets/blog/wwdc-introducing-combine-1690d0f75cd680f3afccc3cb7520cd78/image-003.png>)
@@ -43,19 +41,19 @@ manuscriptPages: 33
 
 ## Combine Features
 
-**Generic**
+<strong>Generic</strong>
 
 Combine은 Swift용으로 만들어져서 제네릭과 같은 Swift 기능을 활용할 수 있다\. 제네릭을 사용하면 여러 비동기 작업들을 일관적으로 처리할 수 있어서 코드의 양도 줄일 수 있고, 하나의 알고리즘을 다양한 곳에서 사용할 수 있다\.
 
-**Type safe**
+<strong>Type safe</strong>
 
 Combine은 Type safe하기 때문에 런타임이 아닌 컴파일 시간에 오류를 잡을 수 있다\.
 
-**Composition first**
+<strong>Composition first</strong>
 
 Combine은 구성이 먼저라서 핵심 개념이 간단하고 이해하기 쉽지만 이들을 사용하면 큰 효과를 볼 수 있다\.
 
-**Request driven**
+<strong>Request driven</strong>
 
 Combine은 요청 기반이기 때문에 앱의 메모리 사용량과 성능을 잘 관리할 수 있다\.
 
@@ -65,15 +63,15 @@ Combine은 요청 기반이기 때문에 앱의 메모리 사용량과 성능을
 
 combine의 핵심 개념은 Publisher, Subscriber, Operator 3가지 이다\.
 
-**Publisher**
+<strong>Publisher</strong>
 
 뭔가를 내보내는 애, 출판하는 애정도로 생각하자\.
 
-**Subscriber**
+<strong>Subscriber</strong>
 
 구독자, Publish하는 애를 subscribe하게 될 것 같은 느낌이다\.
 
-**Operator**
+<strong>Operator</strong>
 
 주어지는 무언가에 대해서 입맛대로 변환시키거나 필터로 거르는 등 변환 과정을 거치게 해주는 애\.
 
@@ -96,7 +94,7 @@ Publisher를 Subscribe하고 있던 Subscriber가 그 값을 같아서 어떻게
 - 구조체를 사용하기 때문에 값타입이며, Subscriber의 등록도 허용한다\. 
 → 유튜브 채널처럼 시간에 따라 구독자의 등록을 받는 느낌\.
 
-즉 **시간이 경과함에 따른 전송 가능한 일련의 값들을 정의하는 값**이라고 할 수 있을 것 같다\. 
+즉 <strong>시간이 경과함에 따른 전송 가능한 일련의 값들을 정의하는 값</strong>이라고 할 수 있을 것 같다\. 
 
 ![](<../../assets/blog/wwdc-introducing-combine-1690d0f75cd680f3afccc3cb7520cd78/image-008.png>)
 
@@ -110,7 +108,7 @@ Error를 생성할 수 없는 경우에는 Error 타입 대신에 Never 타입�
 
 NotificationCenter의 경우의 예시이다\. 
 
-아까 Publisher를 **시간이 경과함에 따른 전송 가능한 일련의 값**이라고 얘기 했었다\.
+아까 Publisher를 <strong>시간이 경과함에 따른 전송 가능한 일련의 값</strong>이라고 얘기 했었다\.
 
 WWDC에서 소개한 마법사의 이름, 비밀번호를 받는 과정을 생각해보자\.
 
@@ -120,7 +118,7 @@ WWDC에서 소개한 마법사의 이름, 비밀번호를 받는 과정을 생�
 
 ![](<../../assets/blog/wwdc-introducing-combine-1690d0f75cd680f3afccc3cb7520cd78/image-010.png>)
 
-여기서 말하는 publish는 횟수와 상관없이, 시간이 흐르고 어떠한 이벤트가 발생하면 그 흐름에 따른 값이 순서대로 **방출되는 것\(이걸 Publish 라고 말하고 있는거 같습니다\.\)**을 말하고 있는 것 같다\.
+여기서 말하는 publish는 횟수와 상관없이, 시간이 흐르고 어떠한 이벤트가 발생하면 그 흐름에 따른 값이 순서대로 <strong>방출되는 것\(이걸 Publish 라고 말하고 있는거 같습니다\.\)</strong>을 말하고 있는 것 같다\.
 
 ### Subscriber
 
@@ -136,20 +134,20 @@ Subscriber의 프로토콜을 한번 봐보자\. Publisher와 동일하게 두�
 
 Publisher와 다르게 3개의 receive 함수가 있다\.
 
-**receive\(subscription:\)**
+<strong>receive\(subscription:\)</strong>
 
-Subscriber가 Publisher에게 구독을 등록한다는 메서드 **subscribe\(\_:\)**를 호출한 후 Publisher가 이에 대한 회신의 개념으로 호출하는 메서드
+Subscriber가 Publisher에게 구독을 등록한다는 메서드 <strong>subscribe\(\_:\)</strong>를 호출한 후 Publisher가 이에 대한 회신의 개념으로 호출하는 메서드
 
-subscription은 구독권\. 즉 이 구독권을 통해 Subscriber와 Publisher가 연결 관계를 설정할 수 있다\. **subscription\.request\(\.unlimited\)**처럼 무제한 데이터 스트림을 요구할 수도 있고, **subscription**\.**cancel\(\)**처럼 더 이상 값을 받지 않겠다고 Subscriber 입장에서 구독을 끊을 수 있다\.
+subscription은 구독권\. 즉 이 구독권을 통해 Subscriber와 Publisher가 연결 관계를 설정할 수 있다\. <strong>subscription\.request\(\.unlimited\)</strong>처럼 무제한 데이터 스트림을 요구할 수도 있고, <strong>subscription</strong>\.<strong>cancel\(\)</strong>처럼 더 이상 값을 받지 않겠다고 Subscriber 입장에서 구독을 끊을 수 있다\.
 
-**receive\(\_ input:\)**
+<strong>receive\(\_ input:\)</strong>
 
 Publisher가 새로운 데이터를 publish할 때 호출하는 메서드
 
 이 메서드의 return 값은 Subscribers\.Demand 타입인데, 이를 통해 Subscriber가 얼마나 더 많은 데이터를 요청할지 지정할 수 있다\. 
 → \.unlimited면 제한 없이 Publisher가 생산\(produce\)할 수 있는 모든 값을 계속 받아오고  \.none이면 더 이상 추가 데이터를 받아오지 않겠다는 의미이다\.
 
-**receive\(completion:\)**
+<strong>receive\(completion:\)</strong>
 
 Publisher가 데이터를 성공적으로 방출했거나, 에러로 인해 오류가 발생했을 때 호출하는 메서드
 
@@ -192,9 +190,9 @@ NotificationCenter는 Notification을 보내지만 Assign이 grade라는 Int 타
    → Publisher와 Subscriber에서 공통으로 언급한 점중에 Output과 input의 타입이 일치하고, Failure 타입도 일치해야한다가 있었는데 이 두개의 상호간의 타입을 맞춰주기 위해 사용할 수 있는 것\.
 - 추가로 mapping, filtering, restrict 등 Publisher를 특정 범위로 규정지을 때도 사용할 수 있다\.
 
-> 💡 **upstream? downstream?
+> 💡 <strong>upstream? downstream?</strong>
 > 
-> **단순하게 먼저 실행되는 코드는 Upstream, 이후에 실행되는 코드는 Downstream이라 생각하면 된다\.
+> 단순하게 먼저 실행되는 코드는 Upstream, 이후에 실행되는 코드는 Downstream이라 생각하면 된다\.
 > 
 > 예를 들어서 Publisher를 subscribe 하는 일\(Upstream\)을 먼저 하고 이후에 실행될 Subscriber에게 결과를 보내는 일\(Downstream\)
 

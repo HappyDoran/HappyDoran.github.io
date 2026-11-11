@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "React Query란?"
 description: "React Query는 서버로부터 데이터 패칭, 캐싱, 캐시 제어 등 데이터를 쉽고 효율적으로 관리할 수 있는 라이브러리이다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["React", "상태 관리", "네트워크"]
 publishedAt: "2025-04-09T05:30:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -14,11 +12,11 @@ React Query는 서버로부터 데이터 패칭, 캐싱, 캐시 제어 등 데�
 
 대표적인 기능은 다음과 같다\.
 
-- 데이터 **패칭** 및 **캐싱**
-- 동일한 요청의 **중복 제거**
-- **신선한 데이터** 유지
-- 무한 스크롤, 페이지네이션 등의 **성능 최적화**
-- 네트워크 재연결, 요청 실패 등의 **자동 갱신**
+- 데이터 <strong>패칭</strong> 및 <strong>캐싱</strong>
+- 동일한 요청의 <strong>중복 제거</strong>
+- <strong>신선한 데이터</strong> 유지
+- 무한 스크롤, 페이지네이션 등의 <strong>성능 최적화</strong>
+- 네트워크 재연결, 요청 실패 등의 <strong>자동 갱신</strong>
 
 ## 데이터 캐싱
 
@@ -81,25 +79,25 @@ fresh → stale까지의 걸리는 시간
 
 ### Query를 요청했을 때의 흐름
 
-**1\. 초기 데이터 요청**
+<strong>1\. 초기 데이터 요청</strong>
 
 - 쿼리를 처음 실행하게 되면 서버에 데이터를 요청한다\.\(request\)
 - 데이터를 받아오면 캐시에 저장하고, 화면에 랜더링한다\.
 - 초기에 받아온 데이터는 신선한\(fresh\) 상태이다\.
 
-**2\. Stale time 기간\(데이터가 신선한 상태\)**
+<strong>2\. Stale time 기간\(데이터가 신선한 상태\)</strong>
 
 - 10초 동안은 데이터가 신선한\(fresh\) 상태로 간주된다\.
 - 이 기간동안은 같은 쿼리가 다시 실행되면 네크워크 요청 없이 캐시에서 데이터를 바로 반환한다\.
 
-**3\. Stale time이 지난 후**
+<strong>3\. Stale time이 지난 후</strong>
 
 - 지정해놓은 stale Time\(10초\)가 지나면 데이터는 stale 상태로 간주된다\.
 - stale로 변한 데이터를 호출하는 쿼리가 호출된다면, gc Time\(1분\) 동안에는 캐시에 있는 데이터를 보여준다\.
 - 동시에 백그라운드에서 새로운 데이터를 요청한다\.\(Refetch\)
 - 새로운 데이터가 오면 화면을 업데이트한다\.
 
-**4\. gc Time 기간\(데이터를 마지막으로 사용하고 난 시점부터 gc Time 동안\)**
+<strong>4\. gc Time 기간\(데이터를 마지막으로 사용하고 난 시점부터 gc Time 동안\)</strong>
 
 - 데이터를 마지막으로 사용한 시점부터 gc Time 동안은 캐시에 유지된다\.
 - 컴포넌트가 언마운트 되어도 gc Time 동안에는 캐시 메모리에 보관된다\.
@@ -107,7 +105,7 @@ fresh → stale까지의 걸리는 시간
 
 > 💡 gc Time 기간 동안에 백그라운드에서 새로운 데이터를 가져오면 캐시 데이터도 갱신되고, stale time과 gc time도 갱신됩니다\.
 
-**5\. 가비지 콜랙션**
+<strong>5\. 가비지 콜랙션</strong>
 
 - gc Time이 지난 후, 해당 쿼리 데이터는 메모리에서 완전히 제거된다\.
 - 이후에 같은 쿼리를 실행하게 되면 처음부터 다시 요청해야 한다\.
@@ -265,7 +263,7 @@ export default function Movies() {
 
 ` enabled ` \- 옵션을 false로 지정하면 쿼리가 대기 상태를 시작하므로 isPending은 true를 반환한다\.
 
-` isLoading ` \- 쿼리의 첫 번째 가져오기가 진행중인 경우를 나타낸다\. ` isFetching &amp;&amp; isPending ` 
+` isLoading ` \- 쿼리의 첫 번째 가져오기가 진행중인 경우를 나타낸다\. ` isFetching && isPending ` 
 
 #### refetch
 

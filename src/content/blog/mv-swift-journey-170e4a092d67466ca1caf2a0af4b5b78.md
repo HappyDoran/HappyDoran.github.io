@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "MV패턴 날 것으로 이해하기 쉽게 정리하기- Swift Journey"
-description: "MVVM 패턴의 문제점"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "각 화면마다 ViewModel이 생성되는데, 이는 새로운 SoT를 정의하는 것"
 tags: ["SwiftUI", "아키텍처", "상태 관리"]
 publishedAt: "2024-09-21T06:47:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -258,7 +256,7 @@ SwiftUI의 반응형 특성 활용 \- MV 패턴은 데이터와 상태를 관리
 
 복잡합 비즈니스 로직 처리 \- 코드 기반을 체계적으로 유지해야할 때는 다른 아키텍쳐가 적합할 수 있음
 
-## **결론**
+## <strong>결론</strong>
 
 MV\(Model\-View\) 패턴은 SwiftUI의 선언적이고 반응적인 접근 방식과 잘 맞는 간단하고 가벼운 아키텍처를 제공합니다\. 단순성과 보일러플레이트 감소 측면에서 장점이 있지만, 특히 복잡성이 커짐에 따라 모든 애플리케이션에 적합하지 않을 수 있습니다\. 개발자는 MV 패턴을 효과적으로 사용하는 시기와 방법을 이해함으로써 SwiftUI의 기능을 활용하여 반응성이 뛰어나고 유지 관리가 가능한 애플리케이션을 쉽게 구축할 수 있습니다
 

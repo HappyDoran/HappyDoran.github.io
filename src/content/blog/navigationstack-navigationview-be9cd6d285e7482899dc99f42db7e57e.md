@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "NavigationStack(NavigationView 안녕)"
 description: "WWDC22에서 NavigationView가 deprecated되고 ,"
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["SwiftUI", "상태 관리"]
 publishedAt: "2024-08-27T07:35:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -18,7 +16,7 @@ NavigationStack/NavigationSplitView가 소개되었습니다\.\(iOS 16\+\)
 
 RootView를 표시하고, Root View에 대한 추가 View를 제공할 수 있는 View
 
-→ 쉽게 말하면 View에서 다른 View로의 이동할 때 **제일 최상단**에 작성하는 View
+→ 쉽게 말하면 View에서 다른 View로의 이동할 때 <strong>제일 최상단</strong>에 작성하는 View
 
 #### Stack이기 때문에 항상 제거되지 않은 가장 최근에 쌓인 View를 표시합니다\.
 

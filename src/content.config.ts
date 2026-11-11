@@ -15,34 +15,25 @@ const v1 = z
   })
   .transform((post) => ({
     ...post,
-    category: "미분류",
-    categorySlug: "uncategorized",
     pinned: false,
     schemaVersion: 1 as const,
     tags: [] as string[],
   }));
 
 const tag = z.string().trim().min(1).max(40);
+// 2026-11-11 전에 게시한 글에 남은 주제·시리즈 field. build만 통과시키고 화면에는 쓰지 않는다.
+const retired = z.unknown().optional();
 const v2 = z
   .object({
     ...fields,
-    category: z.string().trim().min(1).max(80),
-    categorySlug: z
-      .string()
-      .min(1)
-      .max(120)
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    category: retired,
+    categorySlug: retired,
     manuscriptPages: z.number().int().positive().optional(),
     pinned: z.boolean().default(false),
     schemaVersion: z.literal(2),
-    series: z.string().trim().min(1).max(80).optional(),
-    seriesOrder: z.number().finite().optional(),
-    seriesSlug: z
-      .string()
-      .min(1)
-      .max(120)
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-      .optional(),
+    series: retired,
+    seriesOrder: retired,
+    seriesSlug: retired,
     tags: z
       .array(tag)
       .max(10)

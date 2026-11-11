@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "WWDC) Explore structured concurrency in Swift"
-description: "Concurrency"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "동시성. Queue(작업 대기 행렬)의 작업 처리방식에서 동시에 실행이 되는 처리방식을 뜻한다. ConcurrentQueue는 들어온 작업을 여러 개의 다른 스레드에서 동시에 실행시킨다."
 tags: ["Swift", "동시성"]
 publishedAt: "2024-10-05T08:21:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
@@ -103,7 +101,7 @@ concurrent binding의 동작은 다음과 같다\.
 1. child task가 비동기 작업을 수행하는 동안 parent task는 이후 작업을 수행한다\.
 1. 결과값이 실제로 필요한 상황이 오면, parent task는 child task의 작업이 완료될 때 까지 기다린다\.
 
-> 💡 **좋은 비유**
+> 💡 <strong>좋은 비유</strong>
 > 
 > placeholder value \- 개집
 > child task 결과 \- 개
@@ -152,9 +150,9 @@ task가 cancel 상태라고 해서 task가 중단이 되는 것이 아니라 tas
 
 모든 Task가 Cancel되거나 Finish되면 호출한 Function도 모두 끝나길 기다리다가 에러를 방출하며 종료된다\.
 
-> 💡 **좋은 비유
+> 💡 <strong>좋은 비유</strong>
 > 
-> **1\. ` 엄마(Parent task) `가 ` 아들1(Child task1) `에게 ` 개를 찾아오라(비동기 작업) `고 시킨다\.
+> 1\. ` 엄마(Parent task) `가 ` 아들1(Child task1) `에게 ` 개를 찾아오라(비동기 작업) `고 시킨다\.
 > 2\. 그리고 엄마는 ` 아들2(Child task2) `에게 ` 개밥을 준비하라(비동기 작업) `고 시킨다\.
 > 3\. 엄마는 아들이 개를 찾아올 동안에 ` 개집(Placeholder) `을 준비해놓고, 그밖의 다른 집안일도 한다\.
 > 4\. 아들이 ` 개를 못찾아왔다…(에러)
@@ -215,7 +213,7 @@ group\.async method를 통해서 에러를 던질 수 있는 Child Task를 만�
 
 Task가 수행할 작업의 클로저가 @Sendable 타입이여야 된다\.
 
-> 💡 💡**@Sendable**
+> 💡 💡<strong>@Sendable</strong>
 > 
 > 하나의 concurrency domain에서 다른 domain으로 sendable type을 안전하게 pass 할 수 있도록 해준다\. 쉽게 말해서 concurrency 홤경에서 안전하게 공유될 수 있는 타입\.
 

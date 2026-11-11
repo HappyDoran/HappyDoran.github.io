@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "React에서 Mobile UX를 위한 Stackflow 도입 고민"
-description: "1. 개요"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "기존의 웹 라우팅(Next.js 등)은 URL 변경 → 페이지 교체(Unmount/Mount) 방식을 사용한다. 이는 데스크탑 웹에서는 적합하지만, 모바일 앱 특유의 화면이 겹치며 쌓이는 느낌은 주지 못한다. Stackflow는 브라우저 위해서 가상의 스택(Stack)을 구현해서 사용자에게 Mobile UX 경험을 제공한다."
 tags: ["React", "아키텍처", "상태 관리"]
 publishedAt: "2026-01-10T09:25:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"
@@ -12,7 +10,7 @@ manuscriptPages: 15
 
 ### 1\. 개요
 
-기존의 웹 라우팅\(Next\.js 등\)은 URL 변경 → 페이지 교체\(Unmount/Mount\) 방식을 사용한다\. 이는 데스크탑 웹에서는 적합하지만, 모바일 앱 특유의 **화면이 겹치며 쌓이는 느낌**은 주지 못한다\. Stackflow는 브라우저 위해서 가상의 스택\(Stack\)을 구현해서 사용자에게 Mobile UX 경험을 제공한다\.
+기존의 웹 라우팅\(Next\.js 등\)은 URL 변경 → 페이지 교체\(Unmount/Mount\) 방식을 사용한다\. 이는 데스크탑 웹에서는 적합하지만, 모바일 앱 특유의 <strong>화면이 겹치며 쌓이는 느낌</strong>은 주지 못한다\. Stackflow는 브라우저 위해서 가상의 스택\(Stack\)을 구현해서 사용자에게 Mobile UX 경험을 제공한다\.
 
 ---
 
@@ -20,7 +18,7 @@ manuscriptPages: 15
 
 #### 2\.1\. 정의 및 출처
 
-JS 환경\(React\)에서 iOS/Android 네이티브 앱과 동일한 화면 전환 및 스택 네비게이션 경험을 구현해주는 라이브러리이다\. **🥕당근 프론트엔드 팀**에서 개발 및 오픈소스로 공개하였으며, 당근마켓 앱 내의 수많은 웹뷰 페이지들이 다음을 기반으로 동작한다\.
+JS 환경\(React\)에서 iOS/Android 네이티브 앱과 동일한 화면 전환 및 스택 네비게이션 경험을 구현해주는 라이브러리이다\. <strong>🥕당근 프론트엔드 팀</strong>에서 개발 및 오픈소스로 공개하였으며, 당근마켓 앱 내의 수많은 웹뷰 페이지들이 다음을 기반으로 동작한다\.
 
 ` → 부분적으로나마 스택의 개념을 사용할 수 있다는 것을 뜻한다. `
 
@@ -28,11 +26,11 @@ JS 환경\(React\)에서 iOS/Android 네이티브 앱과 동일한 화면 전환
 
 ### 3\. Technical Deep Dive\(핵심 기술 분석\)
 
-Stackflow는 단순한 애니메이션 라이브러리가 아닌, **상태 기반의 네비게이션 시스템**이다\. 그 핵심 원리는 다음과 같다\.
+Stackflow는 단순한 애니메이션 라이브러리가 아닌, <strong>상태 기반의 네비게이션 시스템</strong>이다\. 그 핵심 원리는 다음과 같다\.
 
 #### 3\.1\. 마이크로 커널 &amp; 플러그인 아키텍처 \(Micro\-kernel &amp; Plugin System\)
 
-Stackflow의 Core\(` @stackflow/core `\)는 매우 경량화되어 있으며, 오직 &\#39;스택의 상태\(State\)&\#39;만을 관리한다\. 실제 화면을 그리고, URL을 바꾸는 기능은 모두 **플러그인**에게 위임한다\.
+Stackflow의 Core\(` @stackflow/core `\)는 매우 경량화되어 있으며, 오직 &\#39;스택의 상태\(State\)&\#39;만을 관리한다\. 실제 화면을 그리고, URL을 바꾸는 기능은 모두 <strong>플러그인</strong>에게 위임한다\.
 
 ```javascript
 // 📄 src/stackflow/stackflow.ts
@@ -52,19 +50,19 @@ export const { Stack, useFlow } = stackflow({
 });
 ```
 
-**Renderer Plugin: **Core의 상태를 구독하여 실제 DOM을 렌더링하고, CSS ` transform `을 이용해 화면 전환\(Transition\) 애니메이션을 처리한다\.
+<strong>Renderer Plugin: </strong>Core의 상태를 구독하여 실제 DOM을 렌더링하고, CSS ` transform `을 이용해 화면 전환\(Transition\) 애니메이션을 처리한다\.
 
-**History Sync Plugin:** Stackflow의 내부 상태와 브라우저의 History API를 양방향으로 동기화한다\. 이 덕분에 SPA\(Single Page Application\)임에도 불구하고 뒤로가기 버튼과 새로고침이 정상 작동한다\.
+<strong>History Sync Plugin:</strong> Stackflow의 내부 상태와 브라우저의 History API를 양방향으로 동기화한다\. 이 덕분에 SPA\(Single Page Application\)임에도 불구하고 뒤로가기 버튼과 새로고침이 정상 작동한다\.
 
 #### 3\.2\. DOM 보존과 메모리 관리 \(Stack Context\)
 
 일반적인 웹 라우터와 가장 차별화되는 지점이다\.
 
-**기존 라우터\(Next\.js\):** 페이지 A → B 이동 시, A 컴포넌트는 **Unmount**된다\. 뒤로가기 시 A를 다시 처음부터 그린다\.
+<strong>기존 라우터\(Next\.js\):</strong> 페이지 A → B 이동 시, A 컴포넌트는 <strong>Unmount</strong>된다\. 뒤로가기 시 A를 다시 처음부터 그린다\.
 
-**Stackflow:** 페이지 A → B 이동 시, A 컴포넌트는 **Inactive\(비활성\)** 상태로 DOM에 남아있고, B가 그 위에 **Active\(활성\)** 상태로 쌓인다\.
+<strong>Stackflow:</strong> 페이지 A → B 이동 시, A 컴포넌트는 <strong>Inactive\(비활성\)</strong> 상태로 DOM에 남아있고, B가 그 위에 <strong>Active\(활성\)</strong> 상태로 쌓인다\.
 
-- **이점:** 뒤로가기\(` pop `\) 시 이전 화면이 **0ms**의 속도로 즉시 나타나며, 스크롤 위치와 입력하던 데이터가 **100% 보존**된다\.
+- <strong>이점:</strong> 뒤로가기\(` pop `\) 시 이전 화면이 <strong>0ms</strong>의 속도로 즉시 나타나며, 스크롤 위치와 입력하던 데이터가 <strong>100% 보존</strong>된다\.
 
 ```javascript
 // 🆚 라우팅 방식 차이 비교
@@ -120,7 +118,7 @@ const MyActivity = () => {
 </table>
 </div>
 
-**핵심 효용:**
+<strong>핵심 효용:</strong>
 모바일 환경에서 웹사이트가 아닌 ` 앱을 사용하는 듯한 사용자 경험(UX) `을 제공한다\. 특히 목록 상세 조회 후 뒤로가기 패턴에서 사용자 이탈을 방지하고 사용성을 극대화할 수 있다\.
 
 ---
@@ -156,7 +154,7 @@ export default function StackEntryPage() {
 
 #### Phase 3: 컴포넌트 전환 \(Server → Client\)
 
-- Stackflow의 모든 Activity는 브라우저에서 인터랙션 하므로 **Client Component**여야 한다\.
+- Stackflow의 모든 Activity는 브라우저에서 인터랙션 하므로 <strong>Client Component</strong>여야 한다\.
 - 기존 ` page.tsx `의 서버 데이터 로직\(` async/await `, DB 직접 접근\)을 API Route\(` app/api/... `\)로 분리하고, Activity 내부에서는 ` React Query ` 등을 통해 데이터를 호출하도록 변경한다\.
 
 ```javascript
@@ -181,7 +179,7 @@ const MyPageActivity = () => {
 
 #### Phase 4: 라우팅 로직 교체
 
-- ` router.push() ` 및 ` &lt;Link&gt; ` 태그를 ` useFlow().push() ` 등의 Stackflow 전용 훅으로 교체하여 스택 네비게이션이 작동하도록 한다\.
+- ` router.push() ` 및 ` <Link> ` 태그를 ` useFlow().push() ` 등의 Stackflow 전용 훅으로 교체하여 스택 네비게이션이 작동하도록 한다\.
 - 메인 탭\(Home, Project, MyPage\)과 상세 화면 간의 레이아웃\(BottomBar\) 노출 여부를 ` MainTabLayout ` 컴포넌트로 제어한다\.
 
 ```javascript

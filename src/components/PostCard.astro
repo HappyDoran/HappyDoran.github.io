@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { formatDate, pathFor, tagSlug } from "../lib/blog";
+import { formatDate, pathFor, tagPath } from "../lib/blog";
 
 interface Props {
   headingLevel?: "h2" | "h3";
@@ -14,14 +14,13 @@ const remainingTagCount = post.data.tags.length - visibleTags.length;
 ---
 <article class="post-card">
   <div class="post-card-meta">
-    <a class="category-link" href={pathFor("categories/" + post.data.categorySlug + "/")}>{post.data.category}</a>
     <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
   </div>
   <Heading><a class="post-card-title" href={pathFor("posts/" + post.id + "/")}>{post.data.title}</a></Heading>
   {post.data.description && <p class="post-card-description">{post.data.description}</p>}
   {visibleTags.length > 0 && (
     <ul class="tag-list" aria-label="태그">
-      {visibleTags.map((tag) => <li><a href={pathFor("tags/" + tagSlug(tag) + "/")}>#{tag}</a></li>)}
+      {visibleTags.map((tag) => <li><a href={tagPath(tag)}>#{tag}</a></li>)}
       {remainingTagCount > 0 && <li aria-label={"태그 " + remainingTagCount + "개 더 있음"}>+{remainingTagCount}</li>}
     </ul>
   )}

@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "Mono-repo에 AI Agent 작업 지원 체계 구축하기"
-description: "목적과 범위"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "React Native WebView shell, Next.js 콘텐츠, 공통 패키지가 함께 있는 프론트엔드 mono-repo에 AI Agent(Codex, Claude Code)가 안전하게 작업할 수 있는 문서 구조와 검증 체계를 만들었다. 이 글은 그 체계를 하나로 연결해 설명한다. Agent가 과거 대화 없이 작업을 시작해 필요한 사실을 찾고, 실제 구현을 확인하고, 변경을 검증하고, 다음 세션에 근거를 남기는 전체 운영 방식을 다룬다."
 tags: ["아키텍처", "개발 도구"]
 publishedAt: "2026-08-10T14:28:00.000Z"
 updatedAt: "2026-11-10T15:32:00.000Z"
@@ -41,7 +39,7 @@ React Native WebView shell, Next\.js 콘텐츠, 공통 패키지가 함께 있�
 
 > 저장소 안의 정본은 ` docs/AI_AGENT_HARNESS.md `다\. 이 글은 그 정본과 각 소유 문서를 처음 읽는 사람이 한 번에 이해하도록 엮은 설명이다\. 내용이 다르면 실행 가능한 계약\(코드·스크립트·workflow\)이 현재 사실이다\.
 
-표기: 프로젝트 고유 접두사는 ` {prefix} `, 패키지 scope는 ` @scope `, workspace 패키지 이름은 ` &lt;app 패키지&gt; `·` &lt;web 패키지&gt; `로 바꿔 적었다\.
+표기: 프로젝트 고유 접두사는 ` {prefix} `, 패키지 scope는 ` @scope `, workspace 패키지 이름은 ` <app 패키지> `·` <web 패키지> `로 바꿔 적었다\.
 
 ### 도입 배경
 
@@ -218,7 +216,7 @@ Claude
 
 루트와 두 workspace의 ` CLAUDE.md `, ` .claude/skills/*/SKILL.md `는 모두 canonical 파일을 가리키는 symlink다\. repository harness가 두 종류 모두 정확한 symlink인지 검사한다\. 복사본이나 canonical 경로만 적은 adapter 파일은 허용하지 않는다\.
 
-도구별 차이는 발견 경로와 Claude 전용 hook뿐이다\. 실제 규칙 본문, 테스트 명령과 완료 조건은 같은 소유 문서에서 읽는다\. Claude hook은 Skill을 **읽었는지**를 검사하고, git hook은 도구와 관계없이 커밋 **결과물**을 검사한다\.
+도구별 차이는 발견 경로와 Claude 전용 hook뿐이다\. 실제 규칙 본문, 테스트 명령과 완료 조건은 같은 소유 문서에서 읽는다\. Claude hook은 Skill을 <strong>읽었는지</strong>를 검사하고, git hook은 도구와 관계없이 커밋 <strong>결과물</strong>을 검사한다\.
 
 반복 절차 문서\(` docs/guides/new-screen.md `, ` docs/runbooks/deploy.md `\)는 문서가 본문을 소유한다\. 같은 이름의 Skill\(` new-screen `, ` deploy-web `\)은 작업을 자동으로 불러오는 진입점과 완료 확인만 가진다\.
 
@@ -368,14 +366,14 @@ pnpm --filter <app 패키지> run bundle:android:ci
 커밋할 때 ` .githooks `가 먼저 검사한다\.
 
 - ` pre-commit `: ` pnpm run test:harness `, ` pnpm run structure:check `
-- ` commit-msg `: trailer를 뺀 커밋 본문이 비어 있지 않은지, app·web·packages 소스를 바꿨는데 테스트 변경이 없으면 ` 테스트 제외: &lt;사유&gt; ` 줄이 있는지
+- ` commit-msg `: trailer를 뺀 커밋 본문이 비어 있지 않은지, app·web·packages 소스를 바꿨는데 테스트 변경이 없으면 ` 테스트 제외: <사유> ` 줄이 있는지
 
 hook은 ` pnpm install ` 때 루트 ` prepare ` script가 ` git config core.hooksPath .githooks `로 연결한다\. ` commit-msg ` 판정의 세부는 ` scripts/commit-check.mjs `가 소유한다\.
 
 - 소스: ` app/src `·` web/src `·` packages/*/src `의 ` .ts `·` .tsx `·` .js `·` .jsx `\(` .stories `·` .d.ts ` 제외\)\. 네이티브 Kotlin·Swift와 ` .mjs `는 대상이 아니다\.
 - 테스트 동반: 경로에 ` tests/ `가 있거나 ` .test `·` .spec ` suffix인 staged 파일이 하나라도 있으면 인정한다\.
 - trailer: ` ^[A-Za-z-]+: .+ ` 형태의 줄은 본문으로 세지 않는다\.
-- 제목이 ` Merge  `, ` Revert &quot; `, ` fixup!  `, ` squash!  `, ` amend!  `로 시작하면 검사를 건너뛴다\.
+- 제목이 ` Merge  `, ` Revert " `, ` fixup!  `, ` squash!  `, ` amend!  `로 시작하면 검사를 건너뛴다\.
 - 사용자가 강제하라고 했을 때만 ` F=1 git commit ... `으로 두 hook을 건너뛴다\.
 
 PR 작성자는 다음 증거를 남긴다\.
@@ -416,7 +414,7 @@ PR workflow는 모든 PR에서 자동 실행된다\. 다만 사용 중인 GitHub
 
 문서 frontmatter는 루트·app·web 최상위 ` .md `와 ` docs/ `·` web/docs/ ` 아래 문서에 필수다\(feature README는 대상이 아니다\)\. ` title `·` kind `·` status `·` owner `·` last_verified `가 모두 있어야 하고, ` kind `·` status `는 정해진 값만 쓴다\. ` code_sources `를 적으면 그 경로가 실제로 있어야 한다\. ` last_verified `는 ` YYYY-MM-DD ` 형식만 검사하고 날짜가 지났는지는 보지 않는다\. 사람이 기록한 재검토 정보일 뿐, 실제 검증 행위를 증명하지 않는다\.
 
-문서 경로 검사는 자연어를 의미 분석하지 않는다\. ` / `가 들어 있고 확장자가 있는 인라인 코드 경로와 Markdown 상대 링크를 확인한다\. 디렉터리 표기, glob, ` .env* ` 같은 표현, ` / `가 없는 단일 파일명, fenced code block 안의 경로는 검사하지 않는다\. 반면 ` pnpm run &lt;script&gt; ` 존재 여부와 npm·npx·yarn 명령 금지 검사는 fenced code block을 포함한 원문 전체를 본다\.
+문서 경로 검사는 자연어를 의미 분석하지 않는다\. ` / `가 들어 있고 확장자가 있는 인라인 코드 경로와 Markdown 상대 링크를 확인한다\. 디렉터리 표기, glob, ` .env* ` 같은 표현, ` / `가 없는 단일 파일명, fenced code block 안의 경로는 검사하지 않는다\. 반면 ` pnpm run <script> ` 존재 여부와 npm·npx·yarn 명령 금지 검사는 fenced code block을 포함한 원문 전체를 본다\.
 
 #### Claude Code Skill 관문
 
@@ -430,7 +428,7 @@ PR workflow는 모든 PR에서 자동 실행된다\. 다만 사용 중인 GitHub
 </div>
 
 - 세션이 시작될 때 SessionStart hook이 관문 목록과 &quot;새 화면 추가 → ` new-screen ` 적용&quot; 안내를 출력한다\(새 화면은 관문이 아니라 안내다\)\.
-- Skill을 읽으면 PostToolUse hook이 ` os.tmpdir()/{prefix}-skill-guard/&lt;session&gt;.txt `에 기록하고, 이후 해당 관문은 자동으로 통과한다\. ` plugin:skill ` 형식은 접두어를 떼고 기록한다\.
+- Skill을 읽으면 PostToolUse hook이 ` os.tmpdir()/{prefix}-skill-guard/<session>.txt `에 기록하고, 이후 해당 관문은 자동으로 통과한다\. ` plugin:skill ` 형식은 접두어를 떼고 기록한다\.
 - 코드 수정 관문은 Edit·Write·MultiEdit·NotebookEdit 도구에 걸리고, 대상은 ` app/src `·` app/tests `·` web/src `·` web/tests `·` packages/*/src ` 아래 ` .ts `·` .tsx `·` .js `·` .jsx `·` .mjs `다\. packages 테스트, 네이티브 Kotlin·Swift, CSS·JSON은 관문 밖이다\.
 - 우회는 문장 앞 대입 ` F=1 `, ` SKILL_OK=1 `\(사용자가 slash command로 Skill을 불러 기록이 없을 때\), ` SKILL_GUARD=0 `만 인정한다\.
 - Bash 관문은 실제로 실행되는 문장의 첫 낱말로 판정한다\. heredoc 본문과 검색 명령은 막지 않는다\.
@@ -471,7 +469,7 @@ dev Web 관련 경로 push 또는 수동 실행 (web, packages/shared, packages/
 
 PR workflow는 같은 PR의 이전 실행을 취소하고\(` concurrency `\), checkout은 ` persist-credentials: false `로 한다\. 배포 job은 GitHub ` environment: dev `를 쓴다\. E2E는 env 파일 없이 ` {PREFIX}_E2E=1 ` production build를 3100 포트에 띄우므로, 외부 API를 부르지 않는 화면 흐름만 다룬다\. CI에서는 ` retries: 1 `, ` forbidOnly `가 켜진다\.
 
-세 workflow 모두 ` .github/actions/setup-toolchain `으로만 도구를 설치한다\. 이 action이 ` jdx/mise-action `으로 ` .mise.toml `의 Node·JDK를, ` pnpm/action-setup `으로 루트 ` packageManager `의 pnpm을 설치하고 pnpm store를 캐시한다\. workflow에 버전을 직접 적으면 ` findToolchainSourceErrors `가 막으므로, 로컬과 CI의 도구 버전이 갈라지지 않는다\. Web 배포 workflow는 ` --filter &lt;web 패키지&gt;... `로 Web과 그 의존 workspace만 설치한다\. ` validate-app-shared.yml `은 이름과 path trigger가 App·shared 범위를 나타내지만, 실제 ` typecheck `와 ` test `는 루트에서 실행하므로 연결된 workspace 전체를 검증한다\.
+세 workflow 모두 ` .github/actions/setup-toolchain `으로만 도구를 설치한다\. 이 action이 ` jdx/mise-action `으로 ` .mise.toml `의 Node·JDK를, ` pnpm/action-setup `으로 루트 ` packageManager `의 pnpm을 설치하고 pnpm store를 캐시한다\. workflow에 버전을 직접 적으면 ` findToolchainSourceErrors `가 막으므로, 로컬과 CI의 도구 버전이 갈라지지 않는다\. Web 배포 workflow는 ` --filter <web 패키지>... `로 Web과 그 의존 workspace만 설치한다\. ` validate-app-shared.yml `은 이름과 path trigger가 App·shared 범위를 나타내지만, 실제 ` typecheck `와 ` test `는 루트에서 실행하므로 연결된 workspace 전체를 검증한다\.
 
 세 workflow는 private Git dependency를 설치하기 전에 ` .github/actions/stackflow-kit-auth/action.yml `로 SSH Git URL을 PAT가 담긴 HTTPS로 바꾼다\. ` pnpm install `이 끝나면, PR이나 브랜치 코드가 test·build·E2E에서 실행되기 전에 runner의 Git credential 설정을 지운다\(` if: always() `로 ` rm -f $HOME/.gitconfig `\)\. secret을 받지 못하는 fork·Dependabot PR은 인증 단계에서 실패한다\.
 

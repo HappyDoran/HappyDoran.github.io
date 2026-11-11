@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "구조체"
-description: "프로퍼티 및 메서드 구현"
-category: "미분류"
-categorySlug: "uncategorized"
+description: "구조체"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:31:00.000Z"
 updatedAt: "2026-11-10T15:31:00.000Z"

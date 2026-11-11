@@ -1,9 +1,7 @@
 ---
 schemaVersion: 2
 title: "App, Scene, Window"
-description: "Scenes, Apps 프레임워크를 추가해서 SwiftUI 만으로 모든 앱을 만들 수 있습니다."
-category: "미분류"
-categorySlug: "uncategorized"
+description: "App, Scene, Window"
 tags: ["SwiftUI", "아키텍처"]
 publishedAt: "2024-09-04T11:46:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"

@@ -2,8 +2,6 @@
 schemaVersion: 2
 title: "클로저"
 description: "코드의 블록, 함수는 클로저의 일종이다."
-category: "미분류"
-categorySlug: "uncategorized"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:31:00.000Z"
 updatedAt: "2026-11-10T15:30:00.000Z"
