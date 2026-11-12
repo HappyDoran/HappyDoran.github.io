@@ -1,18 +1,16 @@
 ---
 schemaVersion: 2
-title: "StackFlow 기반 WebView 내비게이션 설계"
-description: "WebView 애플리케이션에서 StackFlow로 화면 stack을 구성한 방식을 정리한다. Activity 등록과 타입 계약, URL 동기화와 deep link 복원, 공용 화면 셸, navigation lock, 네이티브 hardware back 연동을 현재 코드 기준으로 다룬다."
+title: "StackFlow 화면 스택과 내비게이션 설계"
+description: "WebView에서 화면 스택을 운영하려면 Activity 등록, URL 복원, 공통 화면 셸, 네이티브 뒤로 가기가 같은 이동 규칙을 따라야 한다. StackFlow를 기반으로 이 책임을 조립하고 전환 경합을 막는 설계를 살펴본다."
 tags: ["React", "Next.js", "아키텍처", "상태 관리", "CSS"]
 publishedAt: "2026-08-03T09:18:00.000Z"
-updatedAt: "2026-11-11T14:17:00.000Z"
-manuscriptPages: 40
+updatedAt: "2026-11-12T03:52:00.000Z"
+manuscriptPages: 39
 ---
 
-### 문서 목적
+WebView에서 화면 스택을 운영하려면 Activity 등록, URL 복원, 공통 화면 셸, 네이티브 뒤로 가기가 같은 이동 규칙을 따라야 한다\. StackFlow를 기반으로 이 책임을 조립하고 전환 경합을 막는 설계를 살펴본다\.
 
-WebView 애플리케이션에서 StackFlow로 화면 stack을 구성한 방식을 정리한다\. Activity 등록과 타입 계약, URL 동기화와 deep link 복원, 공용 화면 셸, navigation lock, 네이티브 hardware back 연동을 현재 코드 기준으로 다룬다\.
-
-> 표기: 내부 패키지 scope는 ` @scope `로 바꿔 적었다\.
+이 글은 Activity·URL·공통 action의 연결에 집중한다\. 경로·Activity·패키지명과 시간 값은 예시이며, 표의 라이브러리 버전은 v1 구성 사례다\. Next 내부 history 표식과 WebView 비공개 설정에 의존하는 부분은 버전·기기별 회귀 검증이 필요하다\.
 
 ### 1\. 적용 배경
 
@@ -26,16 +24,16 @@ URL 교체만으로는 다음 요구사항을 일관되게 처리하기 어려�
 
 StackFlow는 stack 상태와 렌더링, UI, history 기능을 plugin으로 조립할 수 있어 이 경계를 나누기 좋았다\.
 
-### 2\. 설치 버전
+### 2\. 버전·플러그인 조합 예시
 
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">Package</th><th scope="col">Version</th><th scope="col">책임</th></tr></thead>
-<tbody><tr><td><code>@stackflow/core</code></td><td><code>1.3.0</code></td><td>Activity stack과 transition 상태</td></tr><tr><td><code>@stackflow/react</code></td><td><code>1.12.0</code></td><td>React <code>Stack</code>과 action·state hook</td></tr><tr><td><code>@stackflow/plugin-renderer-basic</code></td><td><code>1.1.13</code></td><td>기본 DOM 렌더링</td></tr><tr><td><code>@stackflow/plugin-basic-ui</code></td><td><code>1.19.2</code></td><td>Cupertino theme와 AppBar</td></tr><tr><td><code>@stackflow/plugin-history-sync</code></td><td><code>1.9.0</code></td><td>Activity ↔ browser history·URL 동기화</td></tr><tr><td><code>@stackflow/react-ui-core</code></td><td><code>1.3.8</code></td><td>Activity UI 상태와 transition helper</td></tr><tr><td><code>@stackflow/config</code></td><td><code>1.2.2</code></td><td>설정 타입</td></tr><tr><td><code>@scope/stackflow-kit</code></td><td>고정 commit</td><td>navigation lock, 안전한 action, 스프링 swipe-back, screen lifecycle</td></tr></tbody>
+<tbody><tr><td><code>@stackflow/core</code></td><td><code>1.3.0</code></td><td>Activity stack과 transition 상태</td></tr><tr><td><code>@stackflow/react</code></td><td><code>1.12.0</code></td><td>React <code>Stack</code>과 action·state hook</td></tr><tr><td><code>@stackflow/plugin-renderer-basic</code></td><td><code>1.1.13</code></td><td>기본 DOM 렌더링</td></tr><tr><td><code>@stackflow/plugin-basic-ui</code></td><td><code>1.19.2</code></td><td>Cupertino theme와 AppBar</td></tr><tr><td><code>@stackflow/plugin-history-sync</code></td><td><code>1.9.0</code></td><td>Activity ↔ browser history·URL 동기화</td></tr><tr><td><code>@stackflow/react-ui-core</code></td><td><code>1.3.8</code></td><td>Activity UI 상태와 transition helper</td></tr><tr><td><code>@stackflow/config</code></td><td><code>1.2.2</code></td><td>설정 타입</td></tr><tr><td><code>@example/navigation-core</code></td><td>고정 commit</td><td>navigation lock, 안전한 action, 스프링 swipe-back, screen lifecycle</td></tr></tbody>
 </table>
 </div>
 
-v1 형식인 ` stackflow({ activities, plugins }) `를 쓴다\. 모든 ` @stackflow/* `는 ` ^ ` 없이 정확한 버전으로 고정했다\. patch 번호 안에서도 peer 범위가 바뀌는 경우가 있어서다\(renderer\-basic은 1\.1\.14부터 core ` ^2 `를 요구한다\)\. v2 config\-first API로 옮길 때는 migration guide를 기준으로 따로 검증한다\.
+v1 형식인 ` stackflow({ activities, plugins }) `를 쓴다\. 이 예시는 모든 ` @stackflow/* `를 ` ^ ` 없이 정확한 버전으로 고정한다\. patch 번호 안에서도 peer 범위가 바뀌는 경우가 있어서다\(renderer\-basic은 1\.1\.14부터 core ` ^2 `를 요구한다\)\. v2 config\-first API로 옮길 때는 migration guide를 기준으로 따로 검증한다\.
 
 ### 3\. 런타임 구성
 
@@ -60,7 +58,7 @@ Feature Activity
 
 route entry는 ` <Stack /> `만 렌더링한다\. middleware가 요청 경로를 header로 넘기고, page가 이를 ` initialContext `로 전달해 서버 렌더링 시점에도 올바른 Activity를 그린다\.
 
-StackFlow 공통 동작\(lock, 안전한 action, swipe, screen lifecycle\)은 별도 패키지로 분리했고, Web에는 AppBar·Layout·bridge를 연결하는 adapter만 남겼다\. 분리 배경은 별도 글에서 다룬다\.
+StackFlow 공통 동작\(lock, 안전한 action, swipe, screen lifecycle\)은 별도 패키지로 분리하는 구조에서는 Web에 AppBar·Layout·bridge를 연결하는 adapter만 둔다\. 분리 배경은 별도 글에서 다룬다\.
 
 ### 4\. Activity와 URL
 
@@ -69,7 +67,7 @@ StackFlow 공통 동작\(lock, 안전한 action, swipe, screen lifecycle\)은 �
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">영역</th><th scope="col">예시 Activity</th><th scope="col">URL 예시</th></tr></thead>
-<tbody><tr><td>홈</td><td><code>HomeActivity</code>, <code>NotificationActivity</code></td><td><code>/</code>, <code>/notifications</code></td></tr><tr><td>체형 분석</td><td>Guide, Measure, Loading, Result, History</td><td><code>/body-analysis</code>, <code>/body-analysis/result/:analysisId</code></td></tr><tr><td>옷장</td><td>Closet, ItemDetail, ItemForm, CodiDetail, CodiForm …</td><td><code>/closet</code>, <code>/closet/items/:itemId</code></td></tr><tr><td>마이페이지</td><td>MyPage, ProfileEdit, Faq, Inquiry, Notice, NoticeDetail</td><td><code>/my-page</code>, <code>/my-page/notice/:noticeId</code></td></tr><tr><td>인증</td><td><code>TermsAgreementActivity</code></td><td><code>/terms</code></td></tr></tbody>
+<tbody><tr><td>홈</td><td><code>HomeActivity</code>, <code>NotificationActivity</code></td><td><code>/</code>, <code>/notifications</code></td></tr><tr><td>이미지 분석</td><td>Guide, Measure, Loading, Result, History</td><td><code>/image-analysis</code>, <code>/image-analysis/result/:analysisId</code></td></tr><tr><td>자료 목록</td><td>AssetList, ItemDetail, ItemForm, CollectionDetail, CollectionForm …</td><td><code>/assets</code>, <code>/assets/items/:itemId</code></td></tr><tr><td>계정</td><td>Account, ProfileEdit, Faq, Inquiry, Notice, NoticeDetail</td><td><code>/account</code>, <code>/account/notice/:noticeId</code></td></tr><tr><td>인증</td><td><code>TermsAgreementActivity</code></td><td><code>/terms</code></td></tr></tbody>
 </table>
 </div>
 
@@ -81,13 +79,13 @@ Activity를 추가할 때 등록부는 세 곳이다\.
 1. params 타입 registry \(` StackActivityRegistry ` module augmentation\)
 1. ` historySyncPlugin.routes `
 
-하나라도 빠지면 평소에는 동작하다가 새로고침·deep link에서만 드러난다\. 그래서 컴파일에서 막는다\.
+하나라도 빠지면 평소에는 동작하다가 새로고침·deep link에서만 드러난다\. 이 누락을 키 집합 비교 타입으로 검사할 수 있다\.
 
 ```typescript
-declare module '@scope/stackflow-kit' {
+declare module '@example/navigation-core' {
   interface StackActivityRegistry {
     HomeActivity: HomeActivityParams;
-    BodyAnalysisResultActivity: BodyAnalysisResultActivityParams;
+    ImageAnalysisResultActivity: ImageAnalysisResultActivityParams;
     // ...
   }
 }
@@ -124,8 +122,8 @@ const under = (parent: ActivityName, path: string, between: ActivityName[] = [],
 
 const routes = {
   HomeActivity: '/',
-  BodyAnalysisMeasureActivity: under('HomeActivity', '/body-analysis/measure', ['BodyAnalysisGuideActivity']),
-  NoticeDetailActivity: under('MyPageActivity', '/my-page/notice/:noticeId', ['NoticeActivity']),
+  ImageAnalysisMeasureActivity: under('HomeActivity', '/image-analysis/measure', ['ImageAnalysisGuideActivity']),
+  NoticeDetailActivity: under('AccountActivity', '/account/notice/:noticeId', ['NoticeActivity']),
   // ...
 };
 ```
@@ -134,7 +132,7 @@ const routes = {
 
 #### Next App Router와의 popstate 충돌
 
-Next App Router는 자기가 쓰지 않은 history 항목\(내부 표식이 없는 항목\)으로 ` popstate `가 오면 페이지를 새로 고친다\. ` defaultHistory ` 항목은 Next가 history를 패치하기 전에 쓰여 표식이 없다\. 그래서 모듈 로드 시 capture 단계 리스너로 StackFlow history 항목에 표식을 붙여, 새로고침 대신 현재 트리를 유지하게 했다\.
+Next App Router는 자기가 쓰지 않은 history 항목\(내부 표식이 없는 항목\)으로 ` popstate `가 오면 페이지를 새로 고친다\. ` defaultHistory ` 항목은 Next가 history를 패치하기 전에 쓰여 표식이 없다\. 우회 방법으로 모듈 로드 시 capture 단계 리스너에서 StackFlow history 항목에 표식을 붙여 트리를 유지하는 구성을 고려할 수 있다\.
 
 Next 내부 표식에 기대는 우회이므로 Next를 올릴 때 deep link E2E부터 확인한다\.
 
@@ -157,7 +155,7 @@ StackFlow 상태를 DOM 렌더링에 연결한다\. stack 순서대로 형제 �
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">위치</th><th scope="col">책임</th></tr></thead>
-<tbody><tr><td><code>web/src/app/[[...stack]]/stackflow/config</code></td><td>Activity·params registry·route·plugin 조립</td></tr><tr><td><code>web/src/app/[[...stack]]/stackflow/activities</code></td><td>여러 feature를 조합하는 Activity</td></tr><tr><td><code>web/src/features/*/components</code></td><td>feature Activity UI와 동작</td></tr><tr><td><code>web/src/shared/stackflow/components</code></td><td>Web <code>StackScreen</code> adapter (AppBar, Layout)</td></tr><tr><td><code>web/src/shared/stackflow/hooks</code></td><td>kit navigation + <code>popTo</code> 확장</td></tr><tr><td><code>web/src/shared/stackflow/runtime</code></td><td>native back 구독과 stack 상태 발행 adapter</td></tr><tr><td>외부 <code>stackflow-kit</code></td><td>lock, 안전한 action, swipe, screen lifecycle, 전환 상수</td></tr></tbody>
+<tbody><tr><td><code>web/src/app/[[...stack]]/stackflow/config</code></td><td>Activity·params registry·route·plugin 조립</td></tr><tr><td><code>web/src/app/[[...stack]]/stackflow/activities</code></td><td>여러 feature를 조합하는 Activity</td></tr><tr><td><code>web/src/features/*/components</code></td><td>feature Activity UI와 동작</td></tr><tr><td><code>web/src/shared/stackflow/components</code></td><td>Web <code>StackScreen</code> adapter (AppBar, Layout)</td></tr><tr><td><code>web/src/shared/stackflow/hooks</code></td><td>kit navigation + <code>popTo</code> 확장</td></tr><tr><td><code>web/src/shared/stackflow/runtime</code></td><td>native back 구독과 stack 상태 발행 adapter</td></tr><tr><td>외부 <code>navigation-core</code></td><td>lock, 안전한 action, swipe, screen lifecycle, 전환 상수</td></tr></tbody>
 </table>
 </div>
 
@@ -199,7 +197,7 @@ Web adapter가 주입:
 - ` animate: false ` action: 이 action이 소유한 token으로 다음 frame에 직접 푼다\.
 - 비정상 lifecycle: 같은 token일 때만 ` 350 + 650 = 1000ms ` fallback으로 푼다\.
 
-` popTo `는 kit에 없는 동작이라 Web이 확장했다\. 여러 화면을 한 번에 닫을 때 전에는 ` replaceTab `\(전환 없음\)을 써서 화면이 툭 바뀌었는데, ` popTo `는 맨 위 화면만 밀려나는 pop 전환을 쓰고 kit과 같은 lock을 잡는다\.
+popTo를 앱 adapter에서 확장할 경우에도 공통 lock을 사용한다\. 전환 없는 replaceTab과 달리 맨 위 화면이 밀려나는 pop 전환을 사용해 여러 화면을 닫는 흐름을 표현할 수 있다\.
 
 ### 9\. 네이티브 hardware back 연동
 
@@ -219,11 +217,11 @@ sequenceDiagram
     end
 ```
 
-처음에는 Native가 ` window.history.back() `을 주입하고 ` historySyncPlugin `이 pop하게 했다\. 이 경로는 navigation lock을 우회해 전환 중 연타에서 이중 pop이 재현됐다\. 지금은 Native가 이벤트만 보내고, 최상단 ` StackScreen `이 버튼 pop과 같은 ` pop() ` 경로로 처리한다\. ` preventSwipeBack `이거나 root이거나 swipe 중이면 무시한다\.
+Native가 window\.history\.back\(\)을 직접 주입하면 공통 lock을 우회해 전환 중 이중 pop을 만들 수 있다\. 이를 피하려면 Native가 이벤트만 보내고, 최상단 ` StackScreen `이 버튼 pop과 같은 ` pop() ` 경로로 처리한다\. ` preventSwipeBack `이거나 root이거나 swipe 중이면 무시한다\.
 
 Native는 Web이 ` web:stack-state `를 한 번이라도 보낸 뒤로는 WebView 자체의 ` canGoBack `을 무시한다\. 그 전까지만 WebView navigation state를 fallback으로 쓴다\.
 
-root 탭에서 시트나 메뉴가 열려 있으면 ` blockNavigation `이 ` canGoBack: true `를 발행한다\. 그래야 hardware back이 앱 종료 대신 Web으로 와서 오버레이를 닫는다\.
+root 탭에서 시트나 메뉴가 열려 있으면 ` blockNavigation `이 ` canGoBack: true `를 발행한다\. 그래야 hardware back앱 종료 대신 Web으로 와서 오버레이를 닫는다\.
 
 ### 10\. Transition 상태와 곡선
 
@@ -233,15 +231,15 @@ root 탭에서 시트나 메뉴가 열려 있으면 ` blockNavigation `이 ` can
 - ` activity.isRoot `, ` activity.isTop `
 - ` stack.globalTransitionState `: 전체 전환의 idle 여부
 
-전환 시간은 ` STACK_TRANSITION_DURATION_MS `\(350ms\) 하나를 StackFlow 설정과 lock fallback이 공유한다\. push·pop 곡선은 swipe\-back과 같은 임계 감쇠 스프링을 정지 상태에서 출발시킨 모양을 CSS ` linear() `로 옮긴 값이다\. ` linear() `를 지원하지 않는 WebView\(iOS 17\.2 미만 등\)는 같은 스프링에 맞춘 ` cubic-bezier ` 근사를 쓴다\.
+이 예시의 전환 시간은 ` STACK_TRANSITION_DURATION_MS `\(350ms\) 하나를 StackFlow 설정과 lock fallback이 공유한다\. push·pop 곡선은 swipe\-back과 같은 임계 감쇠 스프링을 정지 상태에서 출발시킨 모양을 CSS ` linear() `로 옮긴 값이다\. ` linear() `를 지원하지 않는 WebView\(iOS 17\.2 미만 등\)는 같은 스프링에 맞춘 ` cubic-bezier ` 근사를 쓴다\.
 
-iOS WKWebView는 ProMotion 기기에서도 기본적으로 60fps에 묶여 있어 WebView 라이브러리에 pnpm patch를 적용했다\. ` UIScreen.mainScreen.maximumFramesPerSecond > 60 `인 경우에만 비공개 설정 ` PreferPageRenderingUpdatesNear60FPSEnabled `를 끈다\. 60Hz 기기에서는 이 설정을 끄면 30fps로 떨어져 적용하지 않는다\. ` CADisableMinimumFrameDurationOnPhone `도 함께 필요하다\. 0\.2\.2에서는 swipe의 손을 뗀 뒤 마무리도 버튼 pop과 같은 CSS 전환을 쓴다\.
+iOS WKWebView는 ProMotion 기기에서도 기본적으로 60fps에 묶여 있어 WebView 라이브러리에 pnpm patch를 적용했다\. ` UIScreen.mainScreen.maximumFramesPerSecond > 60 `인 경우에만 비공개 설정 ` PreferPageRenderingUpdatesNear60FPSEnabled `를 끈다\. 60Hz 기기에서는 이 설정을 끄면 30fps로 떨어져 적용하지 않는다\. ` CADisableMinimumFrameDurationOnPhone `도 함께 필요하다\. swipe에서 손을 뗀 뒤 마무리도 버튼 pop과 같은 CSS 전환을 쓴다\.
 
 #### 일반 브라우저의 즉시 전환
 
-` app/layout.tsx `가 첫 페인트 전에 ` <html data-{prefix}-runtime="browser|app"> `를 설정하고 ` NativeBridgeSync `가 hydration 뒤에도 표시를 복구한다\. 일반 브라우저에서는 CSS로 슬라이드·dim·swipe edge를 끄며, 앱의 ` useStackNavigation `도 ` push `·` replace `·` pop `·` popTo `에 ` animate: false `를 전달한다\. CSS만 숨기면 보이지 않는 전환 동안 lock이 남아 다음 클릭을 삼키므로 action 자체를 바꾼다\. AppBar의 back·close도 이 앱 hook을 쓴다\.
+` app/layout.tsx `가 첫 페인트 전에 ` <html data-example-runtime="browser|app"> `를 설정하고 ` NativeBridgeSync `가 hydration 뒤에도 표시를 복구한다\. 일반 브라우저에서는 CSS로 슬라이드·dim·swipe edge를 끄며, 앱의 ` useStackNavigation `도 ` push `·` replace `·` pop `·` popTo `에 ` animate: false `를 전달한다\. CSS만 숨기면 보이지 않는 전환 동안 lock이 남아 다음 클릭을 삼키므로 action 자체를 바꾼다\. AppBar의 back·close도 앱 hook을 쓴다\.
 
-개발용 가짜 native는 브리지를 흉내 내지만 화면 전환 정책은 일반 브라우저다\. 다만 가짜 hardware back은 kit 내부 pop을 지나므로 직후 약 270ms 동안 이동이 무시되는 개발 서버 한계가 기록되어 있다\(` cf88d7c `\)\.
+개발용 브리지 대체 구현이 있더라도 일반 브라우저와 WebView의 화면 전환 정책을 구분해야 한다\. 대체 back 이벤트가 다른 action 경로를 거치면 lock 시간이 달라질 수 있으므로 같은 경로를 사용하는지 확인한다\.
 
 ### 11\. Activity 추가 체크리스트
 
@@ -264,14 +262,15 @@ iOS WKWebView는 ProMotion 기기에서도 기본적으로 60fps에 묶여 있�
 - Next를 올리면 popstate 우회와 deep link 복원을, StackFlow나 kit을 올리면 swipe\-back·lock·hardware back을 회귀 검증한다\.
 - 브라우저 E2E는 hardware back과 native bridge 실동작을 재현하지 못한다\. WebView 실기기·시뮬레이터에서 swipe·hardware back·새로고침을 따로 확인한다\.
 
-### 참고
+### 정리
 
-- StackFlow 공식 소개
-- Activity 공식 문서
-- History Sync 공식 문서
-- StackFlow v1 → v2 Migration Guide
-- 관련 글: 커스텀 Swipe\-back 구현 배경 및 설계, StackFlow kit 패키지 분리 배경 및 설계
+- Activity·params·URL 등록부를 같은 타입 계약으로 검사한다\.
+- deep link에는 부모 history와 hydration 규칙을 함께 정의한다\.
+- swipe·버튼·hardware back이 같은 lock 경로를 사용하게 한다\.
+- 공통 엔진과 AppBar·Layout·브리지 adapter를 나눈다\.
 
-### 구현 근거와 검토 범위
+### 관련 글
 
-2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/src/shared/stackflow/hooks/use-stack-navigation.ts `, ` web/src/shared/stackflow/components/stack-screen.tsx `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
+- React 모바일 화면에 Stackflow를 도입할 때의 설계와 전환 전략
+- WebView의 커스텀 swipe\-back과 전환 경합 처리
+- StackFlow 공통 내비게이션 로직의 패키지 분리 설계
