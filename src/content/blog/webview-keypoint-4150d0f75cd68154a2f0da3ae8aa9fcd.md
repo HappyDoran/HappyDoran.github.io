@@ -1,28 +1,26 @@
 ---
 schemaVersion: 2
-title: "WebView 앱의 네이티브 포즈 카메라 설계"
-description: "체형 분석용 전신 사진과 관절 좌표를 얻는 포즈 카메라를 WebView가 아니라 네이티브로 구현한 배경과 설계를 정리한다. RN overlay UI와 네이티브 preview의 책임 분리, iOS·Android의 레이어 배치, 단일 JSON 계약과 코드 생성, landmark 계약, overlay 좌표 계산, 리뷰·포인트 조정, 앨범 전용 진입, 세션 수명, 업로드·해제 브리지, Android hardware back 처리를 다룬다."
+title: "WebView의 네이티브 keypoint 카메라와 좌표 계약"
+description: "WebView 앱에서 카메라와 온디바이스 keypoint 검출을 결합하려면 preview·컨트롤·좌표·파일 수명의 책임을 나눠야 한다. RN overlay와 네이티브 view를 조합해 촬영·앨범·리뷰·업로드를 연결하는 설계를 살펴본다."
 tags: ["React Native", "아키텍처", "성능 최적화"]
 publishedAt: "2026-11-11T14:16:00.000Z"
-updatedAt: "2026-11-11T14:17:00.000Z"
-manuscriptPages: 68
+updatedAt: "2026-11-12T03:55:00.000Z"
+manuscriptPages: 64
 ---
 
-> 표기: 프로젝트 고유 접두사는 ` {prefix} `, 패키지 scope는 ` @scope `로 바꿔 적었다\.
+WebView 앱에서 카메라와 온디바이스 keypoint 검출을 결합하려면 preview·컨트롤·좌표·파일 수명의 책임을 나눠야 한다\. RN overlay와 네이티브 view를 조합해 촬영·앨범·리뷰·업로드를 연결하는 설계를 살펴본다\.
 
-### 문서 목적
-
-체형 분석용 전신 사진과 관절 좌표를 얻는 포즈 카메라를 WebView가 아니라 네이티브로 구현한 배경과 설계를 정리한다\. RN overlay UI와 네이티브 preview의 책임 분리, iOS·Android의 레이어 배치, 단일 JSON 계약과 코드 생성, landmark 계약, overlay 좌표 계산, 리뷰·포인트 조정, 앨범 전용 진입, 세션 수명, 업로드·해제 브리지, Android hardware back 처리를 다룬다\.
+이 글은 카메라 세션과 좌표 계약에 집중한다\. 클래스·경로·시간·해상도·품질 값은 구성 예시이며, 특정 분석 목적에 종속된 점의 개수·이름·보정 비율은 N개 keypoint 정책으로 일반화했다\.
 
 ### 1\. 웹 카메라 대신 네이티브 카메라를 쓴 배경
 
-초기 작업 지시서에는 다음 결정이 기록돼 있다\.
+HTTP 로컬 WebView와 네이티브 실시간 검출을 함께 고려할 때 다음 경계를 선택할 수 있다\.
 
 - 카메라 화면 전체를 네이티브로 구현하고, 웹은 브리지 메시지만 보낸다\.
 - 로컬 웹은 HTTP로 로드되므로 브라우저 ` getUserMedia `에 의존하지 않는다\.
 - 좌표는 사진 기준 정규화 좌표\(` x `, ` y `: 0~1\)로 보관한다\. 화면 회전·크기와 무관하게 서버 전송과 재표시가 가능해야 한다\.
 
-플랫폼별 엔진 선택 이유도 같은 문서에 남아 있다\.
+플랫폼별 엔진을 선택할 때 다음 특성을 비교한다\.
 
 <div class="notion-table-wrap">
 <table>
@@ -31,25 +29,25 @@ manuscriptPages: 68
 </table>
 </div>
 
-같은 문서의 성능 기준은 &quot;분석 중 새 프레임은 큐에 쌓지 않고 폐기&quot;, &quot;종료 시 카메라 세션과 detector를 반드시 해제&quot;, &quot;ML Kit Pose API는 beta이므로 의존성 버전 고정&quot;이다\. 현재 코드도 iOS는 ` alwaysDiscardsLateVideoFrames = true `, Android는 ML Kit pose\-detection 버전을 고정해 쓴다\.
+프레임 분석 중 들어온 오래된 프레임은 쌓지 않고 폐기하며 종료 시 세션과 detector를 해제한다\. beta API를 사용한다면 의존성 버전을 고정하고 갱신 때 확인한다\.
 
-초기 구현은 네이티브 모달\(Activity·ViewController\)이 화면 전체를 소유했다\. 이후 legacy 클래스와 XML 레이아웃을 지우고, 화면 컨트롤은 RN overlay가, preview와 landmark는 네이티브 view가 맡는 구조로 바꿨다\. 현재 네이티브 모듈은 캡처 파일 upload/release만 제공하고 modal/activity 진입은 제공하지 않는다\.
+네이티브 모달이 화면 전체를 소유하는 방식과 RN overlay가 컨트롤을 소유하는 방식을 비교할 수 있다\. 여기서는 RN이 컨트롤을, 네이티브 view가 preview·keypoint를 맡는다\. 별도 네이티브 모듈은 캡처 파일 upload·release에 한정한다\.
 
 ### 2\. 전체 구조
 
 ```mermaid
 flowchart TB
-    Web["Next.js Web<br/>body-analysis → pose-camera bridge"] -- "REQUEST_POSE_CAMERA {source}" --> Ctrl
+    Web["Next.js Web image-analysis → pose-camera bridge"] -- "REQUEST_POSE_CAMERA {source}" --> Ctrl
     subgraph RN["React Native"]
-        Ctrl["WebView controller<br/>envelope 검증 → feature 위임"] --> Overlay["PoseCameraPreCaptureScreen<br/>(SlideUpOverlay, absoluteFill)"]
-        Overlay --> Flow["usePoseCameraFlow<br/>타이머·리뷰·완료 상태"]
-        Overlay --> View["PoseCameraView<br/>command prop + on* event"]
+        Ctrl["WebView controller envelope 검증 → feature 위임"] --> Overlay["PoseCameraPreCaptureScreen (SlideUpOverlay, absoluteFill)"]
+        Overlay --> Flow["usePoseCameraFlow 타이머·리뷰·완료 상태"]
+        Overlay --> View["PoseCameraView command prop + on* event"]
     end
     subgraph Native["iOS / Android"]
-        View --> VM["ViewManager / ReactView<br/>(Bridge)"]
-        VM --> Session["PoseCameraSession<br/>(Manager)"]
-        Session --> Cam["PoseCameraManager<br/>카메라 + 자세 감지"]
-        Session --> Preview["PoseCameraPreviewView<br/>+ OverlayView (View)"]
+        View --> VM["ViewManager / ReactView (Bridge)"]
+        VM --> Session["PoseCameraSession (Manager)"]
+        Session --> Cam["PoseCameraManager 카메라 + 자세 감지"]
+        Session --> Preview["PoseCameraPreviewView + OverlayView (View)"]
         Session --> Store["PoseCaptureStore / Uploader"]
     end
     Ctrl -- "POSE_CAMERA_COMPLETED / CANCELLED" --> Web
@@ -62,7 +60,7 @@ flowchart TB
 </table>
 </div>
 
-프레임 모서리 브래킷은 RN overlay가 그리는 장식이라 landmark·crop 좌표와 무관하다\. overlay는 WebView 위 ` absoluteFill `이므로 상·하단 컨트롤 위치는 ` useSafeAreaInsets() ` 값을 더해 계산한다\. 초기에는 inset이 하드코딩돼 있었고, 노치·제스처 바를 직접 피해야 한다는 리뷰 이후 바꿨다\.
+프레임 모서리 브래킷은 RN overlay가 그리는 장식이라 landmark·crop 좌표와 무관하다\. overlay는 WebView 위 ` absoluteFill `이므로 상·하단 컨트롤 위치는 ` useSafeAreaInsets() ` 값을 더해 계산한다\. inset을 하드코딩하면 노치·제스처 바를 피하지 못하므로 기기 값을 사용한다\.
 
 ### 3\. 네이티브 레이어 배치
 
@@ -77,11 +75,11 @@ flowchart TB
 
 정리 과정에서 생긴 규칙은 다음과 같다\. Session은 여러 callback 대신 ` PoseCameraSessionOutput ` sink 하나로 View adapter에 이벤트를 전달한다\. ViewManager/ReactView는 ` command ` prop 하나로 RN 명령을 받고 이벤트 연결만 하며, payload 직렬화는 ` PoseCameraEventMapper `가 맡는다\. Android picker는 ` PoseImagePickerHost ` 한 경로로 실행하고 ` MainActivity `는 Activity Result launcher lifecycle만 제공한다\. 파일 수명은 ` PoseCaptureStore `, 네트워크 전송은 ` PoseCaptureUploader `가 나눠 가진다\.
 
-confidence 임계값과 waist·headTop 파생 비율은 ` PoseCameraPolicy `가 단일 소유한다\. 현재 값은 감지 confidence 0\.35, waist 세로 비율 0\.60, hip 너비 비율 2\.0, headTop 연장 비율 0\.55\(최대 0\.06\)다\.
+confidence 임계값과 파생 좌표 정책은 공통 Policy가 소유한다\. 검출 엔진 원시 좌표와 소비자가 필요로 하는 anchor가 다르면 변환의 이유와 적용 범위를 계약으로 정한다\.
 
 ### 4\. 명령·이벤트 단일 JSON 계약
 
-RN native view의 명령·이벤트 문자열은 ` packages/shared/src/pose-camera-contract.json ` 하나가 원본이다\.
+RN native view의 명령·이벤트 문자열은 ` packages/shared/src/keypoint-camera-contract.json ` 하나가 원본이다\.
 
 ```json
 {
@@ -93,12 +91,12 @@ RN native view의 명령·이벤트 문자열은 ` packages/shared/src/pose-came
 
 command는 ` switchCamera `·` retake `·` capture `·` pickImage `·` complete `·` cancel ` 6개, event는 landmark 변경·촬영 가능 여부·카메라 오류·촬영 리뷰·앨범 준비 시작/완료/실패·picker 취소·완료·취소 10개다\.
 
-` scripts/generate-pose-camera-contract.mjs `가 이 JSON으로 세 런타임의 상수 파일을 만든다\.
+` scripts/generate-keypoint-camera-contract.mjs `가 이 JSON으로 세 런타임의 상수 파일을 만든다\.
 
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">생성물</th><th scope="col">내용</th></tr></thead>
-<tbody><tr><td><code>app/src/features/pose-camera/constants/pose-camera-contract.generated.ts</code></td><td><code>POSE_CAMERA_COMMAND</code> 객체와 <code>PoseCameraCommand</code> 타입</td></tr><tr><td>Android <code>bridge/posecamera/PoseCameraContract.kt</code></td><td>command 상수, <code>*_EVENT</code> 상수, <code>EVENT_NAMES</code> 목록</td></tr><tr><td>iOS <code>Bridge/PoseCamera/PoseCameraContract.swift</code></td><td>command 상수</td></tr></tbody>
+<tbody><tr><td><code>app/src/features/pose-camera/constants/keypoint-camera-contract.generated.ts</code></td><td><code>POSE_CAMERA_COMMAND</code> 객체와 <code>PoseCameraCommand</code> 타입</td></tr><tr><td>Android <code>bridge/posecamera/PoseCameraContract.kt</code></td><td>command 상수, <code>*_EVENT</code> 상수, <code>EVENT_NAMES</code> 목록</td></tr><tr><td>iOS <code>Bridge/PoseCamera/PoseCameraContract.swift</code></td><td>command 상수</td></tr></tbody>
 </table>
 </div>
 
@@ -107,26 +105,19 @@ command는 ` switchCamera `·` retake `·` capture `·` pickImage `·` complete 
 드리프트는 ` scripts/check-structure.sh `가 막는다\. 생성물을 백업하고 생성기를 다시 돌린 뒤 diff가 있으면 원래 파일로 되돌리고 실패한다\.
 
 ```bash
-node scripts/generate-pose-camera-contract.mjs > /dev/null
+node scripts/generate-keypoint-camera-contract.mjs > /dev/null
 if ! diff -q "$contract_backup_dir/$index" "$path" > /dev/null; then
   stale_contract_files+=("$path"); cp "$contract_backup_dir/$index" "$path"
-fi   # → "Pose camera contract output is stale. Run: pnpm run pose-camera:contract"
+fi   # → "Pose camera contract output is stale. Run: pnpm run keypoint-camera:contract"
 ```
 
-JSON만 고치고 생성을 건너뛰거나 ` .kt `/` .swift `를 직접 고치면 이 검사가 실패한다\. 검사가 생기면서 상수 값을 하드코딩으로 assert하던 테스트는 지웠다\.
+JSON만 고치고 생성을 건너뛰거나 ` .kt `/` .swift `를 직접 고치면 이 검사가 실패한다\. 상수 리터럴만 반복하는 테스트 대신 생성물과 원본의 일치를 검사한다\.
 
-이 계약은 RN ↔ 네이티브 view 경계 전용이다\. Web ↔ App 브리지 토큰과 payload schema는 별도로 ` @scope/shared/pose `가 소유한다\.
+이 계약은 RN ↔ 네이티브 view 경계 전용이다\. Web ↔ App 브리지 토큰과 payload schema는 별도로 ` @example/shared/pose `가 소유한다\.
 
 ### 5\. Landmark 계약
 
-결과에는 9개 landmark가 고정 순서로 들어간다\.
-
-```typescript
-export const POSE_LANDMARK_IDS = ['headTop', 'leftShoulder', 'rightShoulder', 'leftWaist', 'rightWaist',
-  'leftHip', 'rightHip', 'leftAnkle', 'rightAnkle'] as const;
-```
-
-초기 작업 지시서는 17개 관절을 공통 스키마로 잡았고, 이후 12포인트 리뷰를 거쳐 지금의 9개로 줄었다\. ID는 한 곳에 정의하도록 정리했다\.
+결과는 N개의 keypoint를 고정 순서로 포함한다\. 설명용 ID는 pointA·pointB처럼 정할 수 있으며 실제 의미와 순서는 서버·클라이언트가 같은 계약을 사용해야 한다\.
 
 ` poseCameraResultSchema `는 개수뿐 아니라 순서까지 검증한다\.
 
@@ -147,23 +138,11 @@ landmarks: z.array(poseLandmarkSchema).length(POSE_LANDMARK_COUNT)
 </table>
 </div>
 
-감지 엔진이 직접 주는 점은 어깨·골반·발목과 코다\. 나머지는 파생한다\.
+검출기가 반환하는 원시 점과 결과 계약의 점은 구분한다\. 필요한 점을 직접 검출하지 못하면 검출점으로부터 파생하거나 initialized로 두고 리뷰에서 확인한다\.
 
-- ` leftWaist `/` rightWaist `: 어깨 중심과 골반 중심 사이 ` waistVerticalRatio `\(0\.60\) 지점, ` source: "derived" `
-- ` headTop `: 어깨 중심 → 코 방향으로 ` headTopOffsetRatio `만큼 연장하되 ` maximumHeadTopOffset `으로 제한
-- 촬영 가능 판정: 양 어깨·양 골반이 있고 발목이 하나 이상 있을 때\. 아니면 &quot;양쪽 어깨·골반과 발목이 인식된 뒤 촬영해 주세요&quot;를 돌려준다\.
+#### 파생 좌표와 anchor 보정
 
-#### 골반 너비 보정
-
-ML Kit·Vision의 hip 점은 관절 중심이다\. 체형 분석에는 골반 폭 anchor가 필요해, 두 점의 중심은 그대로 두고 중심으로부터의 거리를 2배로 넓힌다\.
-
-```kotlin
-private fun widenHipPoint(point: {prefix}PoseLandmark, centerX: Float) = point.copy(
-  x = (centerX + ((point.x - centerX) * PoseCameraPolicy.HIP_WIDTH_RATIO)).coerceIn(0f, 1f),
-)
-```
-
-` HIP_WIDTH_RATIO = 2.0 `/` hipWidthRatio = 2.0 `은 양 플랫폼 공통값이다\. 바꾸면 분석 결과와 함께 다시 검증하기로 했다\.
+분석 입력에 필요한 anchor가 검출기의 관절 중심과 다르면 중심·비율을 기준으로 보정할 수 있다\. 중심으로부터의 거리에 비율을 적용하고 0~1로 제한하는 방식이 한 예다\. 비율은 도메인 계약이며 임의의 공통 상수로 일반화하지 않는다\. 변경하면 소비하는 분석 결과와 함께 다시 검증한다\.
 
 ### 6\. Overlay 좌표 계산 공통 로직
 
@@ -171,7 +150,7 @@ preview, 촬영 리뷰, 앨범 리뷰는 이미지와 view의 비율이 다르�
 
 ` contentRect `는 두 content mode 모두 이미지 비율을 유지한다\. aspect\-fill은 ` max(view/image) ` scale로 넘치는 부분을 crop하고, aspect\-fit은 ` min(view/image) ` scale로 이미지 전체를 view 안에 둔 뒤 가운데 정렬한다\.
 
-그 위에 ` displayPoint `\(정규화 → 화면 좌표\), ` normalizedPoint `\(터치 → 0~1 clamp 정규화 좌표\), ` distance `\(드래그 hit\-test\), ` connections `\(9개 점 연결선\)를 둔다\. Android의 ` sampleSize `는 view 긴 변 기준 2의 거듭제곱 decoder sample을 돌려줘, aspect\-fill crop 영역이 view보다 커도 원본 해상도로 디코딩하지 않게 한다\.
+그 위에 ` displayPoint `\(정규화 → 화면 좌표\), ` normalizedPoint `\(터치 → 0~1 clamp 정규화 좌표\), ` distance `\(드래그 hit\-test\), ` connections `\(N개 점 연결선\)를 둔다\. Android의 ` sampleSize `는 view 긴 변 기준 2의 거듭제곱 decoder sample을 돌려줘, aspect\-fill crop 영역이 view보다 커도 원본 해상도로 디코딩하지 않게 한다\.
 
 content mode는 화면별로 고정한다\.
 
@@ -184,7 +163,7 @@ content mode는 화면별로 고정한다\.
 
 카메라 해상도도 같은 비율로 맞췄다\. Android는 Preview·Analysis·Capture에 같은 16:9 ` ResolutionSelector `를, iOS는 ` hd1280x720 ` preset과 ` resizeAspectFill ` preview layer를 쓴다\. 양 플랫폼 모두 후면 카메라로 시작한다\. 드래그 hit 반경은 iOS 16pt, Android ` density × 16 `이다\.
 
-이 순수 로직은 Android ` PoseCameraOverlayGeometryTest.kt `와 iOS ` PoseCameraOverlayGeometryTests.swift `로 고정했다\. 두 테스트 모두 aspect\-fit 가운데 정렬, 세로 preview의 aspect\-fill crop, 화면 좌표 ↔ 정규화 좌표 왕복, 리뷰의 waist 보존·파생, 실시간 waist·hip 너비 정책, 전면 카메라 반전을 검사한다\. Android는 리뷰 디코딩 sample size가 viewport 안에 머무는지도 본다\.
+이 순수 로직은 Android ` PoseCameraOverlayGeometryTest.kt `와 iOS ` PoseCameraOverlayGeometryTests.swift `로 고정했다\. 두 테스트 모두 aspect\-fit 가운데 정렬, 세로 preview의 aspect\-fill crop, 화면 좌표 ↔ 정규화 좌표 왕복, 리뷰의 파생점 보존·파생, 실시간 파생점·파생점 정책, 전면 카메라 반전을 검사한다\. Android는 리뷰 디코딩 sample size가 viewport 안에 머무는지도 본다\.
 
 ### 7\. 이미지 방향과 정규화
 
@@ -223,13 +202,13 @@ stateDiagram-v2
 #### 리뷰와 포인트 편집
 
 - 촬영 리뷰는 감지 결과로 시작하고, 빠진 점은 초기 템플릿 좌표\(` source: "initialized" `\)로 채운다\.
-- 앨범 리뷰도 iOS Vision·Android ML Kit로 사진의 포즈를 자동 검출한다\(` 21a4a76 `\)\. 감지·파생 가능한 점은 유지하고 못 찾은 점만 초기 템플릿\(` initialized `\)으로 채운다\. 이전에 모든 점을 템플릿으로 시작하던 정책에서 바뀌었다\. 감지에 성공한 점도 직접 조정할 수 있다\.
+- 앨범 리뷰도 iOS Vision·Android ML Kit로 사진의 포즈를 자동 검출한다\. 감지·파생 가능한 점은 유지하고 못 찾은 점만 초기 템플릿\(` initialized `\)으로 채운다\. 검출된 점까지 무조건 템플릿으로 덮어쓰지 않는다\. 감지에 성공한 점도 직접 조정할 수 있다\.
 - 포인트 드래그는 네이티브 overlay가 처리하고 ` source: "adjusted" `로 바꾼 뒤 ` onLandmarksChanged `로 RN에 알린다\. ` initialized `는 노란색\(` #FFE06F `\), ` adjusted `는 보라색으로 그린다\.
 - 리뷰 편집 중에는 탭 focus를 막는다\.
 
 완료 가능 판정은 RN이 아니라 네이티브 Session의 ` complete() `가 소유한다\.
 
-Android 기준으로 ` complete() `는 landmark가 9개가 아니거나 ` initialized `가 남아 있으면 ` onCameraError("9개 포인트의 위치를 모두 확인해 주세요") `로 거부한다\. 통과하면 JPEG 정규화 → ` capture_ ` \+ UUID 발급 → ` PoseCaptureStore.register ` → ` onCompleted ` 순서로 진행한다\.
+Android 기준으로 ` complete() `는 keypoint가 N개가 아니거나 ` initialized `가 남아 있으면 ` onCameraError("필수 포인트의 위치를 모두 확인해 주세요") `로 거부한다\. 통과하면 JPEG 정규화 → ` capture_ ` \+ UUID 발급 → ` PoseCaptureStore.register ` → ` onCompleted ` 순서로 진행한다\.
 
 &quot;다음&quot; 버튼은 미조정 포인트가 있어도 활성이다\. 누르면 ` complete() `가 거부하고, RN은 그 문구를 리뷰 화면에 표시한다\. 서버의 landmark source 값에 ` initialized `가 없어 템플릿 좌표는 제출하지 않는다\. 연타는 ` isCompleting ` 상태로 잠근다\.
 
@@ -252,7 +231,7 @@ setError('카메라 촬영 결과가 올바르지 않습니다.');
 
 ` REQUEST_POSE_CAMERA ` payload는 ` { source: 'camera' | 'album' } `이다\. 없거나 잘못된 payload는 ` camera `로 연다\. 구버전 Web 호환을 위해서다\.
 
-처음에는 앨범 버튼도 카메라 화면을 띄우고 카메라를 켠 뒤 picker를 열어, 앨범을 눌렀는데 카메라가 열린 것처럼 보였다\. 지금은 다음처럼 동작한다\.
+앨범 전용 진입은 카메라 세션을 켜지 않고 picker만 열어야 한다\. 카메라 preview를 먼저 띄우면 사용자가 선택한 진입과 화면이 어긋난다\.
 
 - ` initialSource="album" `이면 ` cameraEnabled={false} `로 마운트해 카메라 세션을 시작하지 않는다\.
 - overlay를 화면 밖에 둔 채 picker만 연다\. 사진을 고르면\(` onAlbumAnalysisStarted `, 실패 포함\) overlay를 올린다\.
@@ -288,7 +267,7 @@ overlay는 ` Animated ` translateY로 300ms 동안 시트처럼 올라오고, �
 
 ```mermaid
 sequenceDiagram
-    participant Web as Web (body-analysis)
+    participant Web as Web (image-analysis)
     participant API as 서버
     participant RN as RN bridge handler
     participant N as Native (Store/Uploader)
@@ -320,7 +299,7 @@ App 안에서는 Web pose\-camera feature가 브리지 발신과 결과 구독�
 
 ` pose-camera-web.request.ts `는 ` <img> `로 EXIF 방향을 반영해 디코드하고, 긴 변 최대 2048px·품질 0\.9 JPEG를 만든다\. MediaPipe Pose Landmarker lite\(IMAGE·CPU·1명\)로 검출한다\. 로더와 WASM은 같은 origin의 빌드 자산을 쓰고 모델만 최초 검출 때 외부 저장소에서 받는다\. 로딩 실패·20초 제한·미검출이면 못 찾은 점을 템플릿으로 채운다\.
 
-9개 점은 Pointer Events와 방향키로 조정한다\(기본 1%, Shift 5%\)\. Escape는 닫기이며 열리면 포커스를 받는다\. ` initialized `가 남으면 완료를 거부한다\. 어깨·골반·발목 6점이 모두 있을 때 골반 폭 보정과 코 기반 머리 끝 파생을 적용한다\. 닫은 뒤 도착한 비동기 처리 결과는 버리고 사진을 해제한다\.
+N개 점은 Pointer Events와 방향키로 조정한다\(기본 1%, Shift 5%\)\. Escape는 닫기이며 열리면 포커스를 받는다\. ` initialized `가 남으면 완료를 거부한다\. 파생에 필요한 검출점이 모두 있을 때만 같은 anchor 변환 정책을 적용한다\. 닫은 뒤 도착한 비동기 처리 결과는 버리고 사진을 해제한다\.
 
 완료는 같은 ` poseCameraResultSchema `를 따르며 ` capture_web-<uuid> ` 사진은 페이지 메모리에만 보관한다\. 업로드 함수가 이 ID를 구분해 브리지 대신 사전서명 URL로 직접 PUT한다\. 응답 제한은 60초이고 저장소의 origin·PUT·Content\-Type CORS 허용이 필요하다\. SHA\-256 checksum에 ` crypto.subtle `이 필요하므로 HTTPS 또는 [localhost](<http://localhost/>)에서만 완료할 수 있다\. HTTP LAN에서는 안내와 함께 완료를 막는다\. ID 생성의 UUID fallback만으로 checksum 제약이 해결되지는 않는다\.
 
@@ -340,26 +319,24 @@ RN 쪽은 ` app/tests/unit/features/pose-camera `\(shared schema 계약, 타이�
 
 카메라 흐름은 Android 에뮬레이터에서 gfxstream 오류로 크래시할 수 있다\. 그래서 카메라·권한·picker의 실제 동작은 실기기에서 확인하고, 권한 거부 상태까지 본다\. 테스트 double만으로 네이티브 SDK 동작을 완료로 판정하지 않는다\.
 
-### 현재 제약
+### 적용 범위와 제약
 
 - 감지 엔진이 플랫폼마다 달라\(Vision, ML Kit\) 같은 사진이라도 원시 좌표가 같다는 보장은 없다\. 공통으로 맞춘 것은 출력 계약, 파생 비율, 좌표 계산이다\.
-- 골반 너비 2배 보정은 서버 분석 입력에 맞춘 고정값이다\. 바꾸려면 분석 결과와 함께 다시 검증해야 한다\.
+- anchor 보정 비율은 서버 분석 입력과 함께 정하는 계약이다\. 바꾸려면 분석 결과와 함께 다시 검증해야 한다\.
 - 앨범 사진 자동 검출에서 못 찾은 점은 템플릿으로 남으므로 직접 확인·조정해야 완료할 수 있다\.
 - 명령·이벤트 이름은 생성기로 맞추지만 payload shape은 양 플랫폼 ` PoseCameraEventMapper `가 각각 직렬화한다\. 최종 완료 payload만 RN이 schema로 검증한다\.
 
-### 참고
+### 정리
 
-- 관련 글: Native\-Web 브리지 계약과 보안 설계
-- 관련 글: 체형 분석 비동기 흐름 설계
-- 관련 글: WebView 하이브리드 앱의 프론트엔드 아키텍처 전략
-- 코드: ` packages/shared/src/pose.ts `, ` packages/shared/src/pose-camera-contract.json `, ` scripts/generate-pose-camera-contract.mjs `, ` scripts/check-structure.sh `, ` app/src/features/pose-camera/ `, ` web/src/features/pose-camera/ `
+- RN 컨트롤과 네이티브 preview·세션의 책임을 나눈다\.
+- 세 언어의 명령은 단일 계약에서 생성하고 payload는 각 경계에서 검증한다\.
+- 이미지 방향·표시 좌표·정규화 좌표·파생 anchor를 구분한다\.
+- 취소·재마운트·늦은 응답·파일 해제를 수명 규칙으로 연결한다\.
+- 브라우저 정지 사진과 네이티브 실시간 카메라의 검증 범위를 구분한다\.
 
-### 구현 근거와 검토 범위
+### 관련 글
 
-2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` packages/shared/src/pose.ts `, ` web/src/features/pose-camera/README.md `, ` app/src/features/pose-camera/README.md `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
-
-### 관련 구현 문서
-
-[체형 분석 비동기 흐름 설계](<https://app.notion.com/p/4150d0f75cd681878d65e741f18e2b83>)
-
-[Native\-Web 브리지 계약과 보안 설계](<https://app.notion.com/p/4150d0f75cd681acb3bffe3589d97679>)
+- keypoint 기반 이미지 분석 API 계약
+- 네이티브 이미지 업로드와 Web 오케스트레이션
+- 이미지 업로드 세션과 비동기 분석 polling 설계
+- Native\-Web 브리지의 메시지 계약과 보안
