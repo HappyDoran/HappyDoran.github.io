@@ -4,7 +4,7 @@ title: "@Sendable"
 description: "이렇게 actor 타입을 만들었다. 근데 Actor라는 것도 있다."
 tags: ["Swift", "동시성"]
 publishedAt: "2024-10-13T07:45:00.000Z"
-updatedAt: "2026-11-10T15:31:00.000Z"
+updatedAt: "2026-11-12T04:08:00.000Z"
 manuscriptPages: 7
 ---
 
@@ -52,27 +52,27 @@ struct BankAccount: Sendable {
     let accountNumber: Int = 0
     let balance: Double = 0.0
     
-    let doran: Doran // Stored property 'doran' of 'Sendable'-conforming struct 'BankAccount' has non-sendable type 'Doran
+    let samplePerson: SamplePerson // Stored property 'samplePerson' of 'Sendable'-conforming struct 'BankAccount' has non-sendable type 'SamplePerson
 }
 
-class Doran {}
+class SamplePerson {}
 ```
 
 컴파일 에러가 발생한다\.
 
 ## Class에서의 Sendable
 
-Doran이 class가 아니라 actor라면?
+SamplePerson이 class가 아니라 actor라면?
 
 ```swift
 struct BankAccount: Sendable {
     let accountNumber: Int = 0
     let balance: Double = 0.0
     
-    let doran: Doran
+    let samplePerson: SamplePerson
 }
 
-actor Doran {}
+actor SamplePerson {}
 ```
 
 잘 된다\. actor는 Actor 프로토콜을 암시적으로 준수하고있고, Actor는 Sendable을 준수하고 있기 때문이다\.
