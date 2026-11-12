@@ -4,7 +4,7 @@ title: "Actor Isolation"
 description: "immutable(변동 불가능한) state면 Actor를 쓸 필요가 없다. 근데 지금 공유 가변 상태여서 지금 문제가 발생할 여지가 있는 것이다. 그래서 우리가 Actor라는 걸 쓰고 있는 것이고, Actor가 mutable(변할 수 있는) 상태에 동시에 접근하지 않도록 막으니까(Swift가 근본적으로 보증하니까)…"
 tags: ["Swift", "동시성"]
 publishedAt: "2024-10-12T13:42:00.000Z"
-updatedAt: "2026-11-10T15:31:00.000Z"
+updatedAt: "2026-11-12T04:19:00.000Z"
 manuscriptPages: 27
 ---
 
@@ -307,7 +307,7 @@ actor BankAccount {
 
 let account = BankAccount(accountNumber: 1,
                           initialDeposit: 100,
-                          accountName: "Zedd")
+                          accountName: "SampleUser")
 account.displayName // Actor-isolated property 'displayName' can not be referenced from a non-isolated context
 ```
 
@@ -427,8 +427,8 @@ actor BankAccount {
 
 let account = BankAccount(accountNumber: 1,
                                       initialDeposit: 100,
-                                      accountName: "Doran")
-print(account.displayName) // Doran안녕하세요
+                                      accountName: "SamplePerson")
+print(account.displayName) // SamplePerson안녕하세요
 ```
 
 nonisolated 키워드를 붙이게 되면 actor에 정의된 저장,연산 프로퍼티, 인스턴스 메소드, 인스턴스 서브 스크립트는 기본적으로 actor\-isolated 상태인데 이를 비활성화 할 수 있다\.
