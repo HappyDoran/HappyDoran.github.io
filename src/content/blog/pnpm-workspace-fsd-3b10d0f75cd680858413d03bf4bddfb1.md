@@ -1,18 +1,16 @@
 ---
 schemaVersion: 2
-title: "pnpm Mono-repo와 축소형 FSD 구현"
-description: "React Native App과 Next.js Web을 한 저장소에서 관리하면서도 런타임 의존성, framework 설정, 플랫폼 프로젝트의 소유권은 workspace별로 나눈다. 이 문서는 그 구성을 실제 구현 기준으로 기록한다."
+title: "pnpm 모노레포의 workspace와 축소형 FSD 구현"
+description: "React Native와 Next.js 모노레포는 같은 lockfile을 사용하면서도 서로 다른 런타임·빌드 설정을 유지해야 한다. pnpm workspace와 catalog를 기반으로 package 소유권을 나누고, 각 소스 내부에는 축소형 FSD를 적용하는 구성을 살펴본다."
 tags: ["React Native", "Next.js", "아키텍처", "개발 도구"]
 publishedAt: "2026-08-03T08:48:00.000Z"
-updatedAt: "2026-11-10T15:32:00.000Z"
-manuscriptPages: 18
+updatedAt: "2026-11-12T03:50:00.000Z"
+manuscriptPages: 20
 ---
 
-### 목적
+React Native와 Next\.js 모노레포는 같은 lockfile을 사용하면서도 서로 다른 런타임·빌드 설정을 유지해야 한다\. pnpm workspace와 catalog를 기반으로 package 소유권을 나누고, 각 소스 내부에는 축소형 FSD를 적용하는 구성을 살펴본다\.
 
-React Native App과 Next\.js Web을 한 저장소에서 관리하면서도 런타임 의존성, framework 설정, 플랫폼 프로젝트의 소유권은 workspace별로 나눈다\. 이 문서는 그 구성을 실제 구현 기준으로 기록한다\.
-
-> 표기: 내부 패키지 scope는 ` @scope `, workspace 패키지 이름은 ` <app 패키지> `·` <web 패키지> `로 바꿔 적었다\.
+이 글은 폴더 배치·의존성 설치·공통 계약의 구현에 집중한다\. 경로와 사용자 정의 script는 구성 예시이며 실제 저장소에서는 대응 설정을 함께 마련해야 한다\.
 
 ### 1\. Repository 구성
 
@@ -63,11 +61,11 @@ React, Zod, TypeScript, Jest, ESLint, Zustand, Tailwind 계열처럼 둘 이상�
 }
 ```
 
-App과 Web이 같은 Zod schema로 bridge 계약을 검증하므로, Zod 버전이 workspace마다 갈라지지 않는 것이 특히 중요했다\.
+App과 Web이 같은 Zod schema로 bridge 계약을 검증하므로, Zod 버전이 workspace마다 갈라지지 않는 것이 특히 중요하다\.
 
 #### isolated 설치
 
-pnpm 기본 isolated ` node_modules `를 쓴다\. 다른 패키지를 통해 우연히 설치된 의존성을 import하면 바로 실패하므로, 각 workspace는 import하는 모든 패키지를 직접 선언한다\. React Native 관련 경로\(Gradle, Xcode, Metro\)도 루트가 아니라 ` app/node_modules ` 기준으로 맞췄다\.
+pnpm 기본 isolated ` node_modules `를 쓴다\. 다른 패키지를 통해 우연히 설치된 의존성을 import하면 바로 실패하므로, 각 workspace는 import하는 모든 패키지를 직접 선언한다\. React Native 관련 경로\(Gradle, Xcode, Metro\)도 루트가 아니라 ` app/node_modules ` 기준으로 맞춘다\.
 
 ### 3\. Web package
 
@@ -112,13 +110,13 @@ app/
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">패키지</th><th scope="col">소유</th></tr></thead>
-<tbody><tr><td><code>packages/shared</code></td><td>bridge envelope, 도메인별 event token·payload schema·추론 타입. subpath export(<code>/bridge</code>, <code>/auth</code>, <code>/location</code>, <code>/pose</code>, <code>/safe-area</code>, <code>/webview</code> …)로 나눠 공개</td></tr><tr><td><code>packages/design-system</code></td><td>UI primitive, SVG React component, 색상 token, Storybook. 소비자는 공개 export로만 가져온다</td></tr></tbody>
+<tbody><tr><td><code>packages/shared</code></td><td>bridge envelope, 도메인별 event token·payload schema·추론 타입. subpath export(<code>/bridge</code>, <code>/auth</code>, <code>/location</code>, <code>/keypoints</code>, <code>/safe-area</code>, <code>/webview</code> …)로 나눠 공개</td></tr><tr><td><code>packages/design-system</code></td><td>UI primitive, SVG React component, 색상 token, Storybook. 소비자는 공개 export로만 가져온다</td></tr></tbody>
 </table>
 </div>
 
-두 패키지는 빌드 산출물 없이 TypeScript source를 그대로 export한다\. 같은 저장소 안에서만 소비하므로 별도 빌드 단계를 두지 않았다\.
+두 패키지는 빌드 산출물 없이 TypeScript source를 그대로 export한다\. 같은 저장소 안에서만 소비하므로 별도 빌드 단계를 생략하는 선택이 가능하다\.
 
-StackFlow 공통 로직은 저장소 밖의 private Git 저장소로 분리했고, Web이 고정 commit SHA로 설치한다\. 분리 배경은 별도 글에서 다룬다\.
+런타임 독립적인 내비게이션 로직을 외부 패키지로 분리하는 경우 Web이 고정 Git revision으로 설치하도록 할 수 있다\. 앱 조립부와 패키지의 책임 분리는 관련 글에서 다룬다\.
 
 ### 6\. 소스 의존 방향
 
@@ -142,7 +140,7 @@ Activity, params 타입, URL route는 ` stackflow/config/stackflow.ts ` 한 파�
 
 ### 8\. App native adapter
 
-WebView controller가 envelope 파싱과 dispatch를 조립한다\. 인증, 위치, safe area, pose camera, 이미지 분할 요청은 각 feature handler로 위임한다\.
+WebView controller가 envelope 파싱과 dispatch를 조립한다\. 인증, 위치, safe area, keypoint 카메라, 이미지 분할 요청은 각 feature handler로 위임한다\.
 
 iOS·Android native 코드는 ` Bridge `, ` Manager `, ` Helper `, ` Model `, ` View ` 책임으로 나눈다\.
 
@@ -175,7 +173,7 @@ pnpm run android:prd
 pnpm run android:simulator:local-dev
 ```
 
-모든 script는 ` scripts/run-with-envfile.mjs `가 선택한 env 파일을 읽어 실행한다\. 파일이 없으면 즉시 실패한다\.
+모든 script는 ` scripts/example-env-runner.mjs `가 선택한 env 파일을 읽어 실행한다\. 파일이 없으면 즉시 실패한다\.
 
 ### 10\. Safe Area
 
@@ -185,9 +183,9 @@ Native App은 좌우 inset을 직접 적용하고, top/bottom inset은 bridge로
 
 envelope과 도메인 token·schema는 ` packages/shared `, 범용 전송·구독은 Web ` shared/bridge `, 파싱·dispatch는 App ` features/webview `, 발신·처리 코드는 각 feature가 소유한다\. ` packages/shared/README.md `가 모든 token × schema × 발신·처리 위치의 인덱스를 유지하고, token을 추가했는데 인덱스에 없으면 harness가 실패한다\.
 
-### 12\. 구조 예외의 정리
+### 12\. 구조 예외를 검사 규칙으로 연결하기
 
-초기에는 일부 feature에 어댑터 교체와 다단계 orchestration을 위한 ` apis `, ` services ` 폴더를 예외로 두었다\. 이후 요청은 모두 feature ` api/ `의 ` *.query.ts `·` *.mutation.ts `·` *.request.ts `로 옮겼고, 예외를 문서로만 관리하지 않도록 해당 폴더 이름 자체를 구조 검사에서 막았다\. 현재 구조 예외는 없다\.
+어댑터 교체나 다단계 orchestration을 이유로 apis·services 폴더를 추가하면 요청의 위치가 갈라질 수 있다\. 이 예시는 query·mutation·imperative 요청을 feature api에 모으는 규칙을 선택한다\. 예외를 정리했다면 문서만 바꾸지 않고 허용 폴더·import 검사도 함께 바꾼다\.
 
 ### 13\. 검증
 
@@ -198,7 +196,7 @@ pnpm run test
 pnpm run test:e2e
 pnpm run typecheck
 pnpm run build
-pnpm --filter <app 패키지> run bundle:android:ci   # 루트 build에 포함되지 않는 Metro bundle 검증
+pnpm --filter example-mobile run bundle:android:ci   # 루트 build에 포함되지 않는 Metro bundle 검증
 ```
 
 검증 항목:
@@ -211,3 +209,17 @@ pnpm --filter <app 패키지> run bundle:android:ci   # 루트 build에 포함�
 - [ ] Web Activity·params·route를 함께 등록했는가
 - [ ] native method 계약이 두 플랫폼에서 일치하는가
 - [ ] 배포 명령과 대상 브랜치가 일치하는가
+
+### 정리
+
+- 루트는 orchestration, workspace는 런타임과 플랫폼 설정을 소유한다\.
+- catalog·단일 lockfile·직접 의존성 선언으로 버전과 설치 경계를 맞춘다\.
+- 공통 런타임 계약과 workspace 내부 shared를 구분한다\.
+- Activity 등록·native 계약·Metro bundle을 각각 검증한다\.
+
+### 관련 글
+
+- React Native·Next\.js에서 축소형 FSD의 책임과 의존 경계 정하기
+- React Native·Next\.js 모노레포의 로컬 개발 환경
+- 모노레포의 런타임·의존성 버전 관리
+- 모노레포의 AI Agent 문서·검증 체계 설계
