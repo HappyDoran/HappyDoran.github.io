@@ -1,21 +1,23 @@
 ---
 schemaVersion: 2
-title: "프론트엔드 디자인 패턴 결정: 축소형 FSD"
-description: "React Native WebView shell과 Next.js Web에 공통으로 적용한 소스 구조 규칙과 그 이유를 정리한다. Feature-Sliced Design의 전체 layer를 쓰지 않고 세 layer로 줄였다."
+title: "React Native·Next.js에서 축소형 FSD의 책임과 의존 경계 정하기"
+description: "기능 중심 폴더를 적용할 때 모든 FSD layer를 먼저 만들면 사용하지 않는 추상화와 이동 비용이 늘어날 수 있다. React Native와 Next.js에 공통으로 적용할 수 있는 세 layer 구조를 예로 들어, feature 소유권과 확장 시점을 정리한다."
 tags: ["React Native", "Next.js", "아키텍처"]
 publishedAt: "2026-08-03T08:48:00.000Z"
-updatedAt: "2026-11-10T15:32:00.000Z"
-manuscriptPages: 23
+updatedAt: "2026-11-12T03:49:00.000Z"
+manuscriptPages: 25
 ---
 
-React Native WebView shell과 Next\.js Web에 공통으로 적용한 소스 구조 규칙과 그 이유를 정리한다\. Feature\-Sliced Design의 전체 layer를 쓰지 않고 세 layer로 줄였다\.
+기능 중심 폴더를 적용할 때 모든 FSD layer를 먼저 만들면 사용하지 않는 추상화와 이동 비용이 늘어날 수 있다\. React Native와 Next\.js에 공통으로 적용할 수 있는 세 layer 구조를 예로 들어, feature 소유권과 확장 시점을 정리한다\.
 
-## 축소형 FSD 결정
+이 글은 구조를 선택하는 이유와 경계에 집중한다\. 폴더명·suffix·검사 항목은 규칙의 예시이며 공식 FSD의 필수 규약으로 해석하지 않는다\.
 
-TypeScript 소스는 ` app `, ` features `, ` shared ` 세 layer를 기본으로 쓴다\.
+### 세 layer로 시작하는 이유
+
+기능 소유권과 의존 방향을 먼저 정하려면 ` app `, ` features `, ` shared ` 세 layer로 시작할 수 있다\. 아래는 전체 FSD를 도입하기 전에 적용할 수 있는 축소 규칙의 예시다\.
 
 - 구조보다 책임을 먼저 나눈다\.
-- 실제 파일이 있는 디렉터리만 만든다\. 빈 폴더는 구조 검사가 막는다\.
+- 실제 파일이 있는 디렉터리만 만든다\. 빈 폴더를 검사 대상으로 삼으면 사용하지 않는 구조가 늘어나는 것을 줄일 수 있다\.
 - ` entities `, ` widgets `는 재사용 압력이 확인되기 전에는 만들지 않는다\.
 - 의존 방향은 ` app → features → shared `로 고정한다\.
 
@@ -35,7 +37,7 @@ package/src/
 
 두 feature가 서로를 import해야 한다면 어느 쪽도 관계를 소유하지 않는다는 신호다\. 이때는 ` app ` layer에서 조립한다\.
 
-## features
+### features
 
 feature는 UI뿐 아니라 그 기능의 상태, 런타임 계약, 요청, utility까지 함께 소유한다\.
 
@@ -53,7 +55,7 @@ features/{feature}/
 └─ server.ts     # (선택) Next API route 전용 진입점
 ```
 
-필요한 책임 폴더만 만든다\. ` model `, ` apis `, ` queries `, ` services `, ` config `, ` interfaces `, ` errors `는 기본 구조가 아니며 구조 검사가 막는다\. 초기에 어댑터 교체용으로 허용했던 ` apis `·` services ` 예외는 요청을 ` api/ `로 옮기면서 없앴다\.
+필요한 책임 폴더만 만든다\. ` model `, ` apis `, ` queries `, ` services `, ` config `, ` interfaces `, ` errors `는 이 예시 구조에 포함하지 않는다\. 어댑터와 서버 요청은 ` api/ `로 모아 요청 책임의 위치를 하나로 만든다\.
 
 ### components/
 
@@ -83,7 +85,7 @@ event token, storage key, option 목록, 순서가 의미를 갖는 식별자 �
 
 ### api/
 
-서버 요청, native SDK·module 요청, bridge 요청을 둔다\. 처음에는 ` queries/ `라는 이름을 썼지만 지금은 ` api/ `로 통일했다\. 이 폴더에는 query hook뿐 아니라 mutation과 imperative bridge 요청도 함께 들어간다\.
+서버 요청, native SDK·module 요청, bridge 요청을 둔다\. query뿐 아니라 mutation과 imperative 요청을 포함하므로 이름을 ` api/ `로 통일한다\. 이 폴더에는 query hook뿐 아니라 mutation과 imperative bridge 요청도 함께 들어간다\.
 
 - 서버 상태: 요청 함수와 TanStack hook을 ` .query.ts ` 또는 ` .mutation.ts `에 함께 둔다\.
 - imperative native·bridge 요청: ` .request.ts `
@@ -99,7 +101,7 @@ feature 내부의 순수 계산과 formatting만 둔다\. lifecycle, I/O, 변하
 
 다른 slice는 ` index.ts `로만 가져온다\. 일반 barrel이 client/server 경계를 넘으면 런타임별 진입점\(` server.ts `\)을 따로 둔다\. 예를 들어 Next API route는 ` features/auth/server.ts `만 import해 client 전용 모듈이 서버 번들에 섞이지 않게 한다\.
 
-## shared
+### shared
 
 도메인과 무관한 인프라와 primitive만 둔다\.
 
@@ -116,7 +118,7 @@ shared/
 
 도메인 payload, event token, schema, 요청 helper는 여러 파일에서 쓰더라도 owning feature에 남긴다\. 두 런타임이 공유하는 계약은 workspace ` shared `가 아니라 ` packages/shared `로 간다\.
 
-## app
+### app
 
 framework entry와 여러 feature의 조립만 맡는다\.
 
@@ -125,7 +127,7 @@ framework entry와 여러 feature의 조립만 맡는다\.
 
 feature 하나로 끝나는 Activity UI와 도메인 상태는 app layer에 두지 않는다\.
 
-## Native platform 패턴
+### Native platform 패턴
 
 Native 소스는 FSD가 아니라 platform adapter 책임으로 구성한다\.
 
@@ -139,9 +141,9 @@ Bridge → Manager → Helper → Model → View
 - Model: 내부·bridge 데이터
 - View: platform UI와 직접 입력
 
-bootstrap 클래스에는 도메인 구현을 넣지 않는다\. iOS는 ` Bridge/{Domain} `, Android는 소문자 ` bridge/{domain} `처럼 플랫폼 관례를 따르고, ` Features/ `·` Platform/ ` 같은 React식 디렉터리는 구조 검사가 막는다\.
+bootstrap 클래스에는 도메인 구현을 넣지 않는다\. iOS는 ` Bridge/{Domain} `, Android는 소문자 ` bridge/{domain} `처럼 플랫폼 관례를 따르고, ` Features/ `·` Platform/ ` 같은 React식 디렉터리는 검사 규칙에서 제한할 수 있다\.
 
-## 네이밍
+### 네이밍
 
 - 파일·디렉터리: ` kebab-case `
 - component·type: ` PascalCase `
@@ -158,9 +160,9 @@ bootstrap 클래스에는 도메인 구현을 넣지 않는다\. iOS는 ` Bridge
 
 framework가 정한 파일 이름과 native 플랫폼 관례는 해당 규칙을 우선한다\.
 
-## 금지 패턴과 이유
+### 금지 패턴과 이유
 
-규칙에 이유를 같이 적지 않으면 다음 작업자가 &quot;정리 가능한 중복&quot;으로 보고 되돌린다\. 그래서 금지 항목마다 이유와 허용 예외를 함께 남겼다\.
+규칙에 이유를 같이 적지 않으면 다음 작업자가 &quot;정리 가능한 중복&quot;으로 보고 되돌린다\. 제한 항목마다 이유와 허용 예외를 함께 문서화해야 한다\.
 
 <div class="notion-table-wrap">
 <table>
@@ -169,7 +171,7 @@ framework가 정한 파일 이름과 native 플랫폼 관례는 해당 규칙을
 </table>
 </div>
 
-## 확장 판단
+### 확장 판단
 
 ` entities ` 도입 조건:
 
@@ -183,11 +185,11 @@ framework가 정한 파일 이름과 native 플랫폼 관례는 해당 규칙을
 - 독립 조립 로직을 가진 화면 영역이 재사용됨
 - feature 디렉터리가 전체 페이지 조립까지 소유하게 됨
 
-대칭이나 예상 재사용만으로는 어느 layer도 추가하지 않는다\. 지금까지 여러 feature를 조합하는 Activity는 Next\.js ` app/[[...stack]]/stackflow/activities `에 두는 것으로 충분했다\.
+대칭이나 예상 재사용만으로는 어느 layer도 추가하지 않는다\. 여러 feature를 조합하는 Activity는 framework 진입점의 조립 영역에 둘 수 있다\. 반복 조립의 부담이 실제로 생길 때 별도 layer를 검토한다\.
 
-## 검증
+### 검증
 
-다음 항목 대부분은 ` structure:check `가 기계적으로 검사한다\.
+다음 항목을 구조 검사로 강제할 수 있다\. 검사 script의 존재만으로 모든 의미적 책임 경계가 검증되는 것은 아니다\.
 
 - [ ] 역방향 import가 없는가
 - [ ] 다른 feature를 공개 진입점으로 한 방향만 import하는가
@@ -197,3 +199,17 @@ framework가 정한 파일 이름과 native 플랫폼 관례는 해당 규칙을
 - [ ] suffix와 공개 ` index.ts `가 일관적인가
 - [ ] 소스 폴더 안에 테스트가 없는가
 - [ ] native 소스가 React 디렉터리 패턴을 복제하지 않는가
+
+### 정리
+
+- app은 조립, features는 기능, shared는 도메인 무관 기반을 소유한다\.
+- 서버 상태와 작업 상태, 공통 런타임 계약과 단일 feature 계약을 나눈다\.
+- 의존 방향·공개 진입점·예외 이유를 함께 검사한다\.
+- entities와 widgets는 반복 소유권과 조립 부담이 확인될 때 추가한다\.
+
+### 관련 글
+
+- pnpm 모노레포의 workspace와 축소형 FSD 구현
+- React Native·Next\.js 모노레포의 로컬 개발 환경
+- 모노레포의 런타임·의존성 버전 관리
+- 모노레포의 AI Agent 문서·검증 체계 설계
