@@ -1,32 +1,28 @@
 ---
 schemaVersion: 2
-title: "Next.js API route를 BFF로 둔 인증 설계"
-description: "WebView 안에서 동작하는 Next.js Web이 로그인 토큰을 어떻게 다루는지 정리한다. 브라우저에서 토큰을 걷어내고 Next API route를 BFF(Backend for Frontend)로 둔 이유, HttpOnly cookie와 서버 세션 bootstrap, 보호 API의 refresh·재시도, middleware guard, 세션 만료 정규화, 로그아웃, 네이티브 소셜 로그인과의 연결을 다룬다. 운영하면서 발견하고 고친 결함도 함께 기록한다."
+title: "Next.js BFF의 HttpOnly cookie 인증 설계"
+description: "Next.js를 BFF로 두면 브라우저가 인증 토큰을 직접 보관하지 않고 같은 출처의 API로 세션을 사용할 수 있다. HttpOnly cookie, 서버 세션 bootstrap, 토큰 회전, 오류와 로그아웃을 하나의 수명으로 연결하는 설계를 살펴본다."
 tags: ["Next.js", "네트워크", "아키텍처", "동시성"]
 publishedAt: "2026-11-11T14:16:00.000Z"
-updatedAt: "2026-11-11T14:17:00.000Z"
-manuscriptPages: 42
+updatedAt: "2026-11-12T03:54:00.000Z"
+manuscriptPages: 37
 ---
 
-> 표기: 프로젝트 고유 접두사는 ` {prefix} `, 패키지 scope는 ` @scope `로 바꿔 적었다\.
+Next\.js를 BFF로 두면 브라우저가 인증 토큰을 직접 보관하지 않고 같은 출처의 API로 세션을 사용할 수 있다\. HttpOnly cookie, 서버 세션 bootstrap, 토큰 회전, 오류와 로그아웃을 하나의 수명으로 연결하는 설계를 살펴본다\.
 
-### 문서 목적
-
-WebView 안에서 동작하는 Next\.js Web이 로그인 토큰을 어떻게 다루는지 정리한다\. 브라우저에서 토큰을 걷어내고 Next API route를 BFF\(Backend for Frontend\)로 둔 이유, HttpOnly cookie와 서버 세션 bootstrap, 보호 API의 refresh·재시도, middleware guard, 세션 만료 정규화, 로그아웃, 네이티브 소셜 로그인과의 연결을 다룬다\. 운영하면서 발견하고 고친 결함도 함께 기록한다\.
+경로·변수·파일명은 설명용 예시다\. cookie 수명과 refresh 결과의 5초 유예는 계약에 따른 선택값이며, Next\.js 16·OpenNext 관련 판단은 해당 배포 조합에서 확인해야 한다\.
 
 ### 1\. 토큰을 브라우저에서 걷어낸 이유
 
-초기 구현은 로그인 결과를 browser storage\(localStorage\)에 세션으로 저장했다\. 이 구조에서는 같은 출처에서 실행되는 스크립트가 토큰을 읽을 수 있고, logout·refresh 요청 body도 브라우저가 조립해야 했다\.
+로그인 토큰을 browser storage\(localStorage\)에 저장하는 구조에서는 같은 출처에서 실행되는 스크립트가 토큰을 읽을 수 있고, logout·refresh 요청 body도 브라우저가 조립해야 했다\.
 
-그래서 다음 원칙으로 바꿨다\.
+BFF를 두는 설계에서는 다음 원칙을 선택한다\.
 
 - 로그인·refresh로 받은 access·refresh token은 HttpOnly persistent cookie에만 저장한다\.
 - 브라우저가 소유하는 세션은 공개 값 ` { userId } `로 한정한다\. 비밀이 없다\.
 - logout·refresh의 백엔드 request body는 브라우저 입력이 아니라 서버가 refresh cookie로 조립한다\.
 - 이전 버전이 남긴 localStorage 세션 값은 인증 bootstrap 시 지운다\.
 - 최초 가입 대기 중인 provider token은 JS 런타임 메모리에만 둔다\. 새로고침되면 가입 절차를 다시 시작한다\.
-
-이 전환과 함께, 게스트 진입 경로가 없는 백엔드 계약에 맞춰 &quot;로그인 없이 들어가기&quot; 버튼도 제거했다\.
 
 ### 2\. 전체 구조
 
@@ -38,10 +34,10 @@ WebView 안에서 동작하는 Next\.js Web이 로그인 토큰을 어떻게 다
           ▼
 [Next.js]
   ├─ middleware.ts            cookie 유무 1차 guard
-  ├─ /api/auth/[action]       check-signup·login·signup·logout (public client)
-  ├─ /api/auth/session        세션 bootstrap (protected client)
-  ├─ /api/protected/*         보호 API (protected route client)
-  └─ /api/notices, /api/terms, /api/faqs   공개 API (public client)
+  ├─ /api/session/[action]       check-signup·login·signup·logout (public client)
+  ├─ /api/session/session        세션 bootstrap (protected client)
+  ├─ /api/private/*         보호 API (protected route client)
+  └─ /api/public/notices, /api/public/terms, /api/public/faqs   공개 API (public client)
           │  Authorization: Bearer <access>
           ▼
 [Backend API]
@@ -50,7 +46,7 @@ WebView 안에서 동작하는 Next\.js Web이 로그인 토큰을 어떻게 다
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">파일</th><th scope="col">책임</th></tr></thead>
-<tbody><tr><td><code>shared/api/auth-cookie.ts</code></td><td>cookie 이름, 옵션, 수명, 설정·삭제</td></tr><tr><td><code>shared/api/server-client.ts</code></td><td>public/protected 서버 client, Bearer, 401 refresh·재시도, single-flight</td></tr><tr><td><code>shared/api/protected-route.ts</code></td><td>보호 route용 client와 응답 생성, 회전 cookie 기록</td></tr><tr><td><code>app/api/auth/[action]/route.ts</code></td><td>인증 action proxy</td></tr><tr><td><code>app/api/auth/session/route.ts</code></td><td>서버 세션 bootstrap</td></tr><tr><td><code>middleware.ts</code></td><td>보호 API·보호 화면 guard</td></tr><tr><td><code>shared/api/client.ts</code></td><td>브라우저 client, 최종 401 이벤트 발행</td></tr></tbody>
+<tbody><tr><td><code>shared/api/session-cookie.ts</code></td><td>cookie 이름, 옵션, 수명, 설정·삭제</td></tr><tr><td><code>shared/api/server-client.ts</code></td><td>public/protected 서버 client, Bearer, 401 refresh·재시도, single-flight</td></tr><tr><td><code>shared/api/private-route.ts</code></td><td>보호 route용 client와 응답 생성, 회전 cookie 기록</td></tr><tr><td><code>app/api/session/[action]/route.ts</code></td><td>인증 action proxy</td></tr><tr><td><code>app/api/session/session/route.ts</code></td><td>서버 세션 bootstrap</td></tr><tr><td><code>middleware.ts</code></td><td>보호 API·보호 화면 guard</td></tr><tr><td><code>shared/api/client.ts</code></td><td>브라우저 client, 최종 401 이벤트 발행</td></tr></tbody>
 </table>
 </div>
 
@@ -71,11 +67,11 @@ const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 세션 cookie가 아니라 ` maxAge `가 있는 persistent cookie로 발급한 이유는 WebView가 종료돼도 refresh cookie가 남아야 하기 때문이다\. 다시 열면 refresh cookie로 서버 세션을 복원한다\. iOS에서는 App의 WebView에 ` sharedCookiesEnabled `를 켜 persistent auth cookie를 OS cookie store와 공유하게 했다\.
 
-cookie 이름은 ` {prefix}-access-token `, ` {prefix}-refresh-token ` 두 개다\. 백엔드 세션 만료 시각은 timezone 없는 문자열로 내려와, cookie 만료를 그 시각에 정확히 맞추지 않고 계약상 수명을 고정값으로 쓴다\.
+cookie 이름은 ` example-access-token `, ` example-refresh-token ` 두 개다\. 백엔드 세션 만료 시각은 timezone 없는 문자열로 내려와, cookie 만료를 그 시각에 정확히 맞추지 않고 계약상 수명을 고정값으로 쓴다\.
 
 ### 4\. 인증 proxy route
 
-` POST /api/auth/{check-signup|login|logout|signup|invitation-login} ` dynamic route가 public client를 사용한다\. ` invitation-login `만 백엔드 ` /api/v1/invitations/login `으로 보내고 나머지는 ` /api/user/oauth/{action} `으로 보낸다\.
+허용 action을 가진 인증 dynamic route는 public client를 사용한다\. 예시 action은 check\-signup·login·logout·signup이며 서버 endpoint 대응표는 BFF에서 소유한다\.
 
 1. action이 허용 목록에 있는지 확인한다\. 없으면 404다\.
 1. logout이 아니면 요청 body를 action별 Zod schema로 검증한다\. 실패하면 400이다\.
@@ -89,19 +85,11 @@ const response = NextResponse.json(
 if (isAuthTokenPayload(data)) setAuthCookies(response, data);
 ```
 
-action 판별은 처음에 ` in ` 연산자를 썼다\. ` in `은 프로토타입 체인까지 통과시켜 ` /api/auth/constructor ` 같은 요청이 schema 조회 단계에서 500이 됐다\. ` Object.hasOwn `으로 바꿔 404로 거른다\.
-
-#### CBT 초대 코드 로그인
-
-현재 비로그인 홈은 소셜 버튼 대신 ` InvitationSection `을 그린다\. ` POST /api/auth/invitation-login `은 ` { code, device } `를 검증해 BE ` POST /api/v1/invitations/login `으로 전달한다\. ` /validate `는 호출하지 않으며 이미 claim된 코드도 ` /login ` 응답으로 판정한다\. 발급 토큰은 기존과 같은 HttpOnly cookie에 저장하고 공개 ` { userId } `만 반환한다\. 신규·기존 사용자 모두 바로 홈으로 이동하며 약관 화면을 거치지 않는다\.
-
-기기 정보는 ` REQUEST_AUTH_DEVICE ` → ` AUTH_DEVICE `로 받으며, 5초 무응답이면 App 업데이트 안내를 표시한다\. App 밖 브라우저는 요청마다 새 ` DV_web-<uuid> `를 만든다\. 초대 코드 오류는 403\(코드 확인\)·429\(잠시 후\)·기타로만 나누며 원문 코드는 로그에 남기지 않는다\.
-
-소셜 로그인·약관 로직과 ` NativeAuthSync `는 CBT 이후 복귀용으로 유지한다\. 개발 서버의 ` ?fakeNative=1 `일 때만 소셜 진입을 함께 표시한다\. Google은 Google Identity Services에서 실제 idToken을 받고 승인된 JavaScript origin 등록이 필요하다\. 운영 빌드는 해당 개발 진입을 제외한다\.
+action 판별은 처음에 ` in ` 연산자를 썼다\. ` in `은 프로토타입 체인까지 통과시켜 ` /api/session/constructor ` 같은 요청이 schema 조회 단계에서 500이 됐다\. ` Object.hasOwn `으로 바꿔 404로 거른다\.
 
 ### 5\. 서버 세션 bootstrap
 
-브라우저는 ` GET /api/auth/session `으로 로그인 여부를 확인한다\. route는 protected client로 백엔드 ` GET /api/user `를 부르고, 공개 값 ` { userId } `만 돌려준다\. access token이 만료됐으면 client가 refresh cookie로 갱신하고 회전된 cookie를 응답에 싣는다\.
+브라우저는 ` GET /api/session/session `으로 로그인 여부를 확인한다\. route는 protected client로 백엔드 ` GET /v1/account `를 부르고, 공개 값 ` { userId } `만 돌려준다\. access token이 만료됐으면 client가 refresh cookie로 갱신하고 회전된 cookie를 응답에 싣는다\.
 
 브라우저 쪽은 이 응답을 TanStack Query의 ` ['auth', 'session'] ` 키로 소유한다\.
 
@@ -126,7 +114,7 @@ export function shouldRetryAuthSession(failureCount: number, error: unknown) {
 
 백엔드에는 브라우저의 raw ` Cookie ` 헤더를 넘기지 않고 Bearer access token만 전달한다\. 인증 요청과 공개 API에는 토큰을 싣지 않는다\.
 
-공지·약관·FAQ는 세션이 없을 때도 호출된다\. 예를 들어 가입 약관 화면은 로그인 전에 약관 목록을 읽는다\. 그래서 이 route들은 ` /api/protected ` 밖\(` /api/notices `, ` /api/terms `, ` /api/faqs `\)에 두고 public client를 쓴다\. middleware matcher에도 들어가지 않는다\.
+공지·약관·FAQ는 세션이 없을 때도 호출된다\. 예를 들어 가입 약관 화면은 로그인 전에 약관 목록을 읽는다\. 그래서 이 route들은 ` /api/private ` 밖\(` /api/public/notices `, ` /api/public/terms `, ` /api/public/faqs `\)에 두고 public client를 쓴다\. middleware matcher에도 들어가지 않는다\.
 
 ### 7\. 401 → refresh → 1회 재시도
 
@@ -169,7 +157,7 @@ sequenceDiagram
     participant C as server-client
     participant BE as Backend
 
-    B->>R: GET /api/protected/...
+    B->>R: GET /api/private/...
     R->>C: client.get()
     C->>BE: Bearer access(만료)
     BE-->>C: 401
@@ -200,7 +188,7 @@ async function refreshSession(refreshToken: string) {
 }
 ```
 
-성공 결과를 바로 지우지 않고 5초 동안 남기는 이유는, 첫 refresh 직후 회전 전 cookie를 들고 늦게 도착한 요청도 같은 결과를 받게 하기 위해서다\. 이 동작은 &quot;동시에 만료된 보호 요청은 하나의 refresh 결과를 공유한다&quot;, &quot;첫 refresh 직후 늦게 도착한 동일 cookie 요청도 회전 결과를 재사용한다&quot; 통합 테스트로 고정했다\.
+성공 결과를 바로 지우지 않고 5초 동안 남기는 이유는, 첫 refresh 직후 회전 전 cookie를 들고 늦게 도착한 요청도 같은 결과를 받게 하기 위해서다\. 통합 테스트에서는 동시에 만료된 요청과 회전 직후 늦게 도착한 요청이 같은 refresh 결과를 사용하는지 확인한다\.
 
 single\-flight Map은 서버 인스턴스 메모리에 있다\. 같은 인스턴스 안의 동시 요청만 합친다\.
 
@@ -254,7 +242,7 @@ export function isRefreshRejected(statusCode: number | undefined) {
 </table>
 </div>
 
-브라우저 client는 응답이 401이거나 code가 ` SESSION_EXPIRED `이면 ` {prefix}:api-unauthorized ` 이벤트를 발행한다\. 전역에 마운트된 인증 동기화 hook이 이를 받아 공개 세션을 지운다\. 세션이 ` null `로 바뀌면 세션 쿼리를 제외한 TanStack Query 캐시를 비우고, 홈 activity가 스택을 홈까지 정리한 뒤 로그인 화면을 그린다\.
+브라우저 client는 응답이 401이거나 code가 ` SESSION_EXPIRED `이면 ` example:api-unauthorized ` 이벤트를 발행한다\. 전역에 마운트된 인증 동기화 hook이 이를 받아 공개 세션을 지운다\. 세션이 ` null `로 바뀌면 세션 쿼리를 제외한 TanStack Query 캐시를 비우고, 홈 activity가 스택을 홈까지 정리한 뒤 로그인 화면을 그린다\.
 
 ```typescript
 if (!customEvent.detail) {
@@ -262,7 +250,7 @@ if (!customEvent.detail) {
 }
 ```
 
-세션 쿼리를 남기는 이유는 커밋 기록에 있다\. 전체 캐시를 지우면 세션 쿼리까지 사라져 로그인 화면이 뜨지 않았다\. 반대로 아무것도 지우지 않으면, 세션 만료 뒤 새로고침 없이 다른 계정으로 로그인했을 때 이전 계정의 내 정보가 staleTime 동안 보였다\.
+세션 쿼리를 남기는 것은 공개 세션과 사용자별 캐시의 수명을 구분하기 위해서다\. 전체 캐시를 지우면 세션 쿼리까지 사라져 로그인 화면이 뜨지 않았다\. 반대로 아무것도 지우지 않으면, 세션 만료 뒤 새로고침 없이 다른 계정으로 로그인했을 때 이전 계정의 내 정보가 staleTime 동안 보였다\.
 
 ### 11\. Middleware guard
 
@@ -276,27 +264,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.json({ code: 'SESSION_EXPIRED', ... }, { status: 401 });
   }
 
-  requestHeaders.set('x-{prefix}-request-path', `${pathname}${request.nextUrl.search}`);
+  requestHeaders.set('x-example-request-path', `${pathname}${request.nextUrl.search}`);
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
-  matcher: ['/api/protected/:path*', '/body-analysis/:path*', '/closet/:path*', '/my-page/:path*', ...],
+  matcher: ['/api/private/:path*', '/image-analysis/:path*', '/assets/:path*', '/account/:path*', ...],
 };
 ```
 
 - API 경로는 ` 401 SESSION_EXPIRED ` JSON을, 화면 경로는 홈으로 redirect를 돌려준다\. 딥링크나 새로고침으로 로그인 전용 화면에 직접 들어오는 경우다\.
 - refresh cookie만 있어도 통과시킨다\. access가 만료됐더라도 보호 API가 refresh로 복구할 수 있다\.
-- ` /api/auth/* `는 cookie 없이 호출해야 하므로 matcher에 넣지 않는다\.
+- ` /api/session/* `는 cookie 없이 호출해야 하므로 matcher에 넣지 않는다\.
 - 통과시킬 때 쿼리를 포함한 요청 경로를 헤더로 넘겨, 새로고침·딥링크에서 activity param이 복원되게 한다\.
 
-#### src 아래에 둬야 하는 이유
+#### framework가 읽는 middleware 위치 확인
 
-처음에는 middleware 파일을 workspace 루트에 뒀다\. Next는 ` src ` 디렉터리를 쓰는 프로젝트에서 루트의 middleware를 읽지 않는다\. 그래서 ` /api/protected ` guard가 빌드 산출물에 실리지 않은 채 동작하지 않고 있었다\. ` web/src/middleware.ts `로 옮기고 빌드의 middleware manifest에 matcher가 들어갔는지 확인했다\.
+src 기반 Next\.js 구성에서는 middleware를 framework가 읽는 위치에 둬야 한다\. 잘못된 위치에 있으면 빌드가 완료돼도 guard가 산출물에 없을 수 있다\. 파일 위치뿐 아니라 middleware manifest의 matcher와 실제 보호 화면·API 응답을 확인한다\.
 
 #### Next 16 ` proxy `로 옮기지 않은 이유
 
-Next 16으로 올리면서 ` middleware `는 deprecated 경고와 ` proxy ` 전환 codemod가 안내된다\. 하지만 ` proxy `는 Node 런타임 전용이고, Web을 배포하는 OpenNext Cloudflare는 Node 미들웨어를 지원하지 않는다\. 그래서 Edge 미들웨어로 유지하고, 이 결정을 web workspace 규칙 문서에 남겼다\. 업그레이드 뒤 로컬 Worker 미리보기에서 세션 없는 보호 화면이 307, 보호 API가 401로 막히는 것을 확인했다\.
+Next 16으로 올리면서 ` middleware `는 deprecated 경고와 ` proxy ` 전환 codemod가 안내된다\. 하지만 ` proxy `는 Node 런타임 전용이고, Web을 배포하는 OpenNext Cloudflare는 Node 미들웨어를 지원하지 않는다\. 따라서 이 배포 조합에서는 Edge middleware 유지 여부를 검토한다\. 업그레이드 후 Worker 미리보기에서 세션 없는 보호 화면의 redirect와 보호 API의 401을 직접 확인해야 한다\.
 
 ### 12\. 로그아웃
 
@@ -344,14 +332,14 @@ sequenceDiagram
     W->>A: REQUEST_AUTH_LOGIN { provider }
     A->>A: 소셜 SDK 로그인
     A-->>W: AUTH_LOGIN_RESULT { ok, provider, token, device }
-    W->>N: GET /api/auth/session (기존 세션 확인, retry 없음)
+    W->>N: GET /api/session/session (기존 세션 확인, retry 없음)
     alt 세션 있음
         N-->>W: { userId } → 결과 무시
     else 세션 없음
-        W->>N: POST /api/auth/check-signup
+        W->>N: POST /api/session/check-signup
         alt 가입됨
-            W->>N: POST /api/auth/login
-            N->>BE: /api/user/oauth/login
+            W->>N: POST /api/session/login
+            N->>BE: /v1/session/login
             BE-->>N: tokens
             N-->>W: { userId } + Set-Cookie
         else 미가입
@@ -360,12 +348,12 @@ sequenceDiagram
     end
 ```
 
-- payload는 ` @scope/shared/auth ` schema로 브리지 경계에서 검증한다\. API route가 같은 schema로 다시 검증하므로 mutation에서는 한 번 더 검증하지 않는다\.
+- payload는 ` @example/shared/auth ` schema로 브리지 경계에서 검증한다\. API route가 같은 schema로 다시 검증하므로 mutation에서는 한 번 더 검증하지 않는다\.
 - 처리 중 중복 수신은 ref flag로 막는다\.
 - 실패하면 Web이 ` AUTH_LOGIN_RESULT `를 ` ok: false `로 다시 발행해 로그인 UI가 오류를 보여주게 한다\.
 - 가입 성공 뒤 로그인만 실패하면 재시도는 로그인부터 한다\.
 
-### 14\. 발견하고 고친 결함
+### 14\. 자주 발생하는 결함과 방지 방법
 
 <div class="notion-table-wrap">
 <table>
@@ -374,9 +362,9 @@ sequenceDiagram
 </table>
 </div>
 
-403 결함은 리소스 단위 보호 API\(단건 분석 조회\)를 처음 연결하면서 드러났다\. 당시에는 별도 ` /api/auth/refresh ` route도 있었는데, 호출처가 없어 이후 정리했다\. 지금은 refresh 경로가 ` server-client.ts ` 안에만 있고 브라우저 route는 없다\.
+refresh 경로가 여러 계층에 중복되지 않게 서버 client가 소유하도록 한다\. 호출처 없는 refresh route를 별도로 유지하면 실제 갱신 책임을 추적하기 어려워진다\.
 
-### 현재 제약
+### 적용 범위와 제약
 
 - middleware는 cookie 유무만 본다\. 위조·만료된 cookie는 보호 API의 401에서 정리된다\.
 - single\-flight는 서버 인스턴스 메모리 기준이다\. 서로 다른 인스턴스로 흩어진 동시 refresh는 합치지 못한다\.
@@ -385,16 +373,15 @@ sequenceDiagram
 - 최초 가입 중 provider token은 메모리에만 있어 새로고침하면 가입을 처음부터 다시 한다\.
 - ` proxy ` 전환은 OpenNext Cloudflare가 Node 미들웨어를 지원할 때 다시 검토한다\.
 
-### 참고
+### 정리
 
-- 관련 글: WebView 하이브리드 앱의 프론트엔드 아키텍처 전략, Native\-Web 브리지 계약과 보안 설계, 체형 분석 비동기 흐름 설계
+- 브라우저에는 공개 세션만 주고 토큰 처리와 갱신은 BFF가 소유한다\.
+- 401·403·refresh 거부·일시 오류를 구분한다\.
+- 회전된 cookie는 성공·오류 응답 모두에 기록한다\.
+- single\-flight의 인스턴스 한계와 사용자별 캐시 정리를 함께 검증한다\.
 
-### 구현 근거와 검토 범위
+### 관련 글
 
-2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/src/app/api/auth/[action]/route.ts `, ` web/src/features/auth/README.md `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
-
-### 관련 구현 문서
-
-[Native\-Web 브리지 계약과 보안 설계](<https://app.notion.com/p/4150d0f75cd681acb3bffe3589d97679>)
-
-[체형 분석 비동기 흐름 설계](<https://app.notion.com/p/4150d0f75cd681878d65e741f18e2b83>)
+- Native\-Web 브리지의 메시지 계약과 보안
+- 이미지 업로드 세션과 비동기 분석 polling 설계
+- Next\.js와 OpenNext의 Cloudflare Workers 배포·운영
