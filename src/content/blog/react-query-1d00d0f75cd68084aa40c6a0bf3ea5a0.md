@@ -1,14 +1,16 @@
 ---
 schemaVersion: 2
 title: "React Query란?"
-description: "React Query는 서버로부터 데이터 패칭, 캐싱, 캐시 제어 등 데이터를 쉽고 효율적으로 관리할 수 있는 라이브러리이다."
+description: "React Query는 서버 요청의 결과와 캐시·신선도를 함께 관리한다. queryKey, useQuery, useMutation을 중심으로 조회와 변경의 상태를 나누는 방법을 정리한다."
 tags: ["React", "상태 관리", "네트워크"]
 publishedAt: "2025-04-09T05:30:00.000Z"
-updatedAt: "2026-11-10T15:31:00.000Z"
-manuscriptPages: 19
+updatedAt: "2026-11-12T04:04:00.000Z"
+manuscriptPages: 20
 ---
 
-React Query는 서버로부터 데이터 패칭, 캐싱, 캐시 제어 등 데이터를 쉽고 효율적으로 관리할 수 있는 라이브러리이다\.
+React Query는 서버 요청의 결과와 캐시·신선도를 함께 관리한다\. queryKey, useQuery, useMutation을 중심으로 조회와 변경의 상태를 나누는 방법을 정리한다\.
+
+API 경로·검색 서비스·엔티티명은 가상 예시다\. 응답 schema와 옵션은 사용하는 버전의 계약에 맞춰야 하며 예시 URL은 실제 실행 서비스를 뜻하지 않는다\.
 
 대표적인 기능은 다음과 같다\.
 
@@ -22,17 +24,17 @@ React Query는 서버로부터 데이터 패칭, 캐싱, 캐시 제어 등 데�
 
 React Query를 활용해서 데이터를 가져올 때는 항상 ` 쿼리 키(queryKey) `를 지정하게 된다\. 이 쿼리 키는 캐시된 데이터와 비교해 새로운 데이터를 가져올지, 캐시된 데이터를 사용할지 결정하는 기준이 된다\.
 
-```javascript
-export const useGetArtistList: GetArtistFnType = () => {
-  const getArtistLst = () => {
-    return instance.get('/artist/get');
+```typescript
+export const useGetItemList: GetItemFnType = () => {
+  const getItemLst = () => {
+    return instance.get('/api/items');
   };
 
   return useQuery({
-    queryKey: ['getArtist'],
-    queryFn: getArtistLst,
+    queryKey: ['getItem'],
+    queryFn: getItemLst,
     select: ({ data }) => {
-      return data.artists;
+      return data.items;
     },
   });
 };
@@ -54,7 +56,7 @@ React Query는 캐시된 데이터를 신선\(Fresh\)하거나 상한\(Stale\) �
 
 → 데이터의 유통기한
 
-```javascript
+```typescript
 export const useGetList = (params?: GetTodosParams) => {
   return useQuery({
     queryKey: ['todos', params],
@@ -114,7 +116,7 @@ fresh → stale까지의 걸리는 시간
 
 가장 기본적인 쿼리 훅으로, 컴포넌트에서 데이터를 가져올 때 사용한다\.
 
-```javascript
+```typescript
 import { useQuery } from '@tanstack/react-query'
 
 type ResponseValue = {
@@ -134,9 +136,9 @@ export default function DelayedData() {
 
 ### Query Key
 
-쿼리 키는 쿼리를 식별하는 고유한 값으로, 배열 형태로 저장된다\. 
+쿼리 키는 쿼리를 식별하는 고유한 값으로, 배열 형태로 저장된다\.
 
-```javascript
+```typescript
 // 단일 아이템 쿼리 키
 useQuery({ queryKey: ['hello'] })
 
@@ -157,7 +159,7 @@ useQuery({ queryKey: ['hello', 'world'] })
 
 쿼리 함수는 데이터를 가져오는 비동기 함수로, 꼭 데이터를 반환하거나 오류를 던져야 한다\. 던져진 오류는 반환되는 error 객체로 확인할 수 있다\. 기본적으로 error는 null이다\.
 
-```javascript
+```typescript
 import { useQuery } from '@tanstack/react-query'
 
 type ResponseValue = {
@@ -194,9 +196,9 @@ export default function DelayedData() {
 
 선택 옵션을 사용하면 가져온 데이터를 변형\(선택\)을 할 수 있습니다\. 쿼리 함수가 반환하는 데이터를 인수로 받아 선택 함수에서 처리하고 반환하면 최종 데이터가 됩니다\. 최종 데이터의 타입은 useQuery 의 3번째 제네릭 타입으로 선언할 수 있습니다\.
 
-```javascript
+```typescript
 async function queryFn(): Promise<Users> {
-  const res = await fetch('https://api.heropy.dev/v0/users')
+  const res = await fetch('https://api.example.com/users')
   const { users } = await res.json()
   return users
 }
@@ -215,13 +217,13 @@ export default function UserNames() {
 
 #### placeholderData
 
-새로운 데이터를 가져오는 과정에서 쿼리가 무효화 되기 때문에, 일시적으로 데이터가 없는 상태\(undefined\)가 되면 데이터 출력 화면이 깜빡거릴 수 있다\. 
+새로운 데이터를 가져오는 과정에서 쿼리가 무효화 되기 때문에, 일시적으로 데이터가 없는 상태\(undefined\)가 되면 데이터 출력 화면이 깜빡거릴 수 있다\.
 
 이런 현상을 방지하기 위해 placeholderData를 사용하여, 쿼리가 호출되는 대기 상태\(Pending\)에서 임시로 표시할 데이터를 미리 지정할 수 있다\.
 
 placeholderData 옵션에는 함수를 지정할 수 있으며, 이 함수는 새로운 데이터를 가져오기 직전의 이전\(Previous\) 데이터를 받을 수 있어서 이를 반환해 임시 데이터로 사용할 수 있습니다\.
 
-```javascript
+```typescript
 // ...
 
 export default function Movies() {
@@ -230,7 +232,7 @@ export default function Movies() {
   const { data: movies } = useQuery<Movie[]>({
     queryKey: ['movies', searchText], // 검색어
     queryFn: async () => {
-      const res = await fetch(`https://omdbapi.com?apikey=7035c60c&s=${searchText}`)
+      const res = await fetch(`https://api.example.com/search?q=${searchText}`)
       const { Search: movies } = await res.json()
       return movies
     },
@@ -241,7 +243,7 @@ export default function Movies() {
 }
 ```
 
-사용자가 검색어\(searchText\)를 변경하면 새로운 쿼리키가 생성된다\. 새 쿼리가 로딩되는 동안 React Query는 이전 검색 결과\(prev\)를 임시 데이터로 표시한다\. 새 쿼리 결과가 도착하면 UI가 새 데이터로 자동 업데이트 된다\. 
+사용자가 검색어\(searchText\)를 변경하면 새로운 쿼리키가 생성된다\. 새 쿼리가 로딩되는 동안 React Query는 이전 검색 결과\(prev\)를 임시 데이터로 표시한다\. 새 쿼리 결과가 도착하면 UI가 새 데이터로 자동 업데이트 된다\.
 
 #### 그 외의 옵션
 
@@ -269,11 +271,11 @@ export default function Movies() {
 
 데이터를 항상 새롭게 다시 가져올 수 있다\.
 
-```javascript
+```typescript
 export default function DelayedData() {
   const { data, isStale, refetch } = useQuery<ResponseValue>({
     queryKey: ['delay'],
-    queryFn: async () => (await fetch('https://api.heropy.dev/v0/delay?t=1000')).json(),
+    queryFn: async () => (await fetch('https://api.example.com/delay?t=1000')).json(),
     staleTime: 1000 * 10
   })
   return (
@@ -286,15 +288,15 @@ export default function DelayedData() {
 }
 ```
 
-만약 신선도를 기반으로 데이터를 가져오려면, ` QueryClient.fetchQuery() ` 메소드를 사용하여 가져올 수 있다\. 
+만약 신선도를 기반으로 데이터를 가져오려면, ` QueryClient.fetchQuery() ` 메소드를 사용하여 가져올 수 있다\.
 
-```javascript
+```typescript
 import { useQuery, useQueryClient, queryOptions } from '@tanstack/react-query'
 // ...
 
 const options = queryOptions<ResponseValue>({
   queryKey: ['delay'],
-  queryFn: async () => (await fetch('https://api.heropy.dev/v0/delay?t=1000')).json(),
+  queryFn: async () => (await fetch('https://api.example.com/delay?t=1000')).json(),
   staleTime: 1000 * 10
 })
 
@@ -302,7 +304,7 @@ export default function DelayedData() {
   const queryClient = useQueryClient()
   const { data, isStale } = useQuery(options)
   
-  function fetchData() {
+  async function fetchData() {
     const data = await queryClient.fetchQuery(options)
     console.log(data) // 캐시된 데이터 or 새로 가져온 데이터
   }
@@ -316,11 +318,11 @@ export default function DelayedData() {
 }
 ```
 
-만약 캐시된 데이터가 필요하다면, ` queryClient.getQueryData() ` 메소드를 사용할 수 있다\. 
+만약 캐시된 데이터가 필요하다면, ` queryClient.getQueryData() ` 메소드를 사용할 수 있다\.
 
 캐시된 데이터가 없을 때 자동으로 fetchQuery를 호출하여 데이터를 호출할 수 있는 ` ensureQueryData() `를 사용할 수도 있다\.
 
-```javascript
+```typescript
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 // ...
 
@@ -328,7 +330,7 @@ export default function DelayedData() {
   const queryClient = useQueryClient()
   const { data, isStale } = useQuery<ResponseValue>({
     queryKey: ['delay'],
-    queryFn: async () => (await fetch('https://api.heropy.dev/v0/delay?t=1000')).json(),
+    queryFn: async () => (await fetch('https://api.example.com/delay?t=1000')).json(),
     staleTime: 1000 * 10
   })
   
@@ -354,9 +356,7 @@ export default function DelayedData() {
 
 요청 실패 시의 자동 재시도나 낙관적 업데이트 같은 고급 기능도 쉽게 처리할 수 있다\.
 
-> 💡 낙관적 업데이트?
-> 
-> 서버 요청의 응답을 기다리지 않고, 먼저 UI를 업데이트 하는 기능을 말합니다\.
+> 💡 낙관적 업데이트?  서버 요청의 응답을 기다리지 않고, 먼저 UI를 업데이트 하는 기능을 말합니다\.
 > 
 > 서버 응답이 느린 상황에서도 빠른 인터페이스를 제공할 수 있어 사용자 경험을 크게 향상시킬 수 있다\.
 
@@ -367,16 +367,16 @@ export default function DelayedData() {
 실행할 비동기 변이 함수, 필수 옵션
 
 ```typescript
-export const useArtist: ArtistFnType = (onSuccess, onError) => {
-  const artist = async ({ file, data }: ArtistParams) => {
+export const useItem: ItemFnType = (onSuccess, onError) => {
+  const item = async ({ file, data }: ItemParams) => {
     const formData = new FormData();
 
-    formData.append('artistData', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    formData.append('itemData', new Blob([JSON.stringify(data)], { type: 'application/json' }));
     if (file) {
       formData.append('profileImage', file);
     }
 
-    return instance.post('/artist/register', formData, {
+    return instance.post('/api/items', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -384,7 +384,7 @@ export const useArtist: ArtistFnType = (onSuccess, onError) => {
   };
 
   return useMutation({
-    mutationFn: artist, // 비동기로 실행할 함수
+    mutationFn: item, // 비동기로 실행할 함수
     onSuccess: onSuccess,
     onError: onError,
   });
@@ -395,7 +395,7 @@ export const useArtist: ArtistFnType = (onSuccess, onError) => {
 
 변이 함수가 실행되기 전에 호출되는 함수
 
-```javascript
+```typescript
 onMutate: async newUser => {
       // 낙관적 업데이트 전에 사용자 목록 쿼리를 취소해 잠재적인 충돌 방지!
       await queryClient.cancelQueries({ queryKey: ['users'] })
@@ -416,6 +416,10 @@ onMutate: async newUser => {
 #### onSuccess, onError
 
 변이에 성공하거나, 실패하게 되면 호출하는 함수
+
+## 정리
+
+queryKey는 데이터의 식별 기준이고 staleTime과 gcTime은 신선도와 보관 수명을 나눈다\. 조회·표시용 변환·변경·낙관적 업데이트의 책임을 구분하고 캐시 조작과 서버 응답의 형태를 일치시켜야 한다\.
 
 ## 참고
 
