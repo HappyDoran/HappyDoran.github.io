@@ -4,7 +4,7 @@ title: "구조체"
 description: "구조체"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:31:00.000Z"
-updatedAt: "2026-11-10T15:31:00.000Z"
+updatedAt: "2026-11-12T04:17:00.000Z"
 manuscriptPages: 1
 ---
 
@@ -97,10 +97,10 @@ struct Student {
 Student.selfIntroduce() // 학생타입입니다
 
 // 가변 인스턴스 생성
-var yagom: Student = Student()
-yagom.name = "yagom"
-yagom.class = "스위프트"
-yagom.selfIntroduce()   // 저는 스위프트반 yagom입니다
+var alex: Student = Student()
+alex.name = "alex"
+alex.class = "스위프트"
+alex.selfIntroduce()   // 저는 스위프트반 alex입니다
 
 // 불변 인스턴스 생성
 let jina: Student = Student()
