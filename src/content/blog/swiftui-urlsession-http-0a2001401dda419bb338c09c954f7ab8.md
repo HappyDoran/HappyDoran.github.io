@@ -1,35 +1,16 @@
 ---
 schemaVersion: 2
-title: "Server와의 HTTP 통신"
-description: "GET 메소드를 통해서 서버에서 데이터를 받아오고, 받아온 데이터를 화면에 나타나도록 해보겠습니다."
+title: "SwiftUI에서 URLSession으로 HTTP 응답 받아 표시하기"
+description: "SwiftUI에서 서버 데이터를 표시하려면 URL 생성, Codable 모델, 비동기 요청, 메인 스레드 상태 갱신을 연결해야 한다. URLSession의 GET 요청을 예로 들어 실패 지점과 책임 분리를 정리한다."
 tags: ["Swift", "SwiftUI", "네트워크"]
 publishedAt: "2024-08-27T07:35:00.000Z"
-updatedAt: "2026-11-10T15:30:00.000Z"
-manuscriptPages: 14
+updatedAt: "2026-11-12T04:04:00.000Z"
+manuscriptPages: 13
 ---
 
-## 실제 프로젝트에서의 HTTP Request
+SwiftUI에서 서버 데이터를 표시하려면 URL 생성, Codable 모델, 비동기 요청, 메인 스레드 상태 갱신을 연결해야 한다\. URLSession의 GET 요청을 예로 들어 실패 지점과 책임 분리를 정리한다\.
 
-GET 메소드를 통해서 서버에서 데이터를 받아오고, 받아온 데이터를 화면에 나타나도록 해보겠습니다\.
-
-## 사전 작업
-
-앱 내에서 인터넷을 사용하기 위해서 하는 사전작업 입니다\.
-
-- 프로젝트 내의 Info에서 추가버튼\(\+\)을 클릭해서 새로운 설정을 생성
-- 설정 아이템의 이름을 “App Transport Security Settrings”로  바꿔주고 하위 추가버튼을 클릭해서 설정 아이템을 만들어준다\.
-- 하위 설정 아이템을 “Allow Arbitrary Loads”로 만들어준다\.
-- Type은 “Boolean”, Value는 “YES”로 설정
-
-![](<../../assets/blog/server-http-0a2001401dda419bb338c09c954f7ab8/image-001.png>)
-
-→ 이렇게 생성해서 프로젝트에서 인터넷을 사용할 수 있다\.
-
-#### 이렇게 하는 이유
-
-Apple 측에서 앱 자체의 보안성을 위해 기본적으로 https 통신을 하도록 유도하고 있기 때문입니다\.
-
-따라서 http통신을 할 때만 이렇게 해주면 됩니다\.
+host·경로·응답 값은 가상 예시다\. HTTPS를 기준으로 설명하며, 로컬 HTTP 예외 설정을 앱의 인터넷 사용에 항상 필요한 설정으로 해석하지 않는다\.
 
 ## 시작하기전에…
 
@@ -55,14 +36,14 @@ Server와 HTTP 통신을 하는 순서는 다음과 같습니다\.
 import Foundation
 
 struct Constants {
-    static let IP_ADDRESS = "localhost"
-    static let PORT_NUM = "8000"
+    static let EXAMPLE_HOST = "api.example.com"
+    static let EXAMPLE_PORT = "443"
 }
 ```
 
 서버의 IP 주소와 Port번호를 저장하는 Constants\.swift 파일입니다\.
 
-나중에 aws 서버를 사용하게 될 경우에는 해당 파일에서 IP\_ADDRESS를  수정한 후 사용하시면 될 것 같습니다\.
+실행 환경별 host·port는 설정 경계에서 관리하고 문서에는 가상 주소를 사용한다\.
 
 #### URLExtensions\.swift
 
@@ -70,8 +51,8 @@ struct Constants {
 import Foundation
 
 extension URL {
-    static func getLandmarkList() -> URL? {
-        return URL(string: "http://\(Constants.IP_ADDRESS):\(Constants.PORT_NUM)/test/LandMarkList/"
+    static func getItemList() -> URL? {
+        return URL(string: "https://\(Constants.EXAMPLE_HOST):\(Constants.EXAMPLE_PORT)/api/items"
         )
     }
 }
@@ -81,18 +62,18 @@ extension URL {
 
 Constants에서 선언해준 IP Address와 Port 번호를 사용하여 URL을 만들어 리턴해줍니다\.
 
-지금과 같은 상황에서는 URL에 들어가는 Parameter가 없는 상황입니다\. 
+지금과 같은 상황에서는 URL에 들어가는 Parameter가 없는 상황입니다\.
 
 따라서 나중에 Parameter가 필요한 상황에서는 URL에 Parameter를 포함해서 만들면 되겠네요\.
 
 ### 모델 생성
 
-#### LandmarkModel\.swift
+#### ItemModel\.swift
 
 ```swift
 import Foundation
 
-struct LandmarkModel: Codable {
+struct ItemModel: Codable {
     let id: Int?
     let refID, addr, name: String?
     let xCoord, yCoord: Double?
@@ -113,30 +94,29 @@ struct LandmarkModel: Codable {
 }
 ```
 
-서버에서 받아올 데이터의 포맷을 맞춰주는 LandmarkModel\.swift입니다\.
+서버에서 받아올 데이터의 포맷을 맞춰주는 ItemModel\.swift입니다\.
 
 서버에서 받아올 데이터는 다음과 같이 생겼습니다\.
 
-```swift
-//서버에서 받아올 데이터의 포맷
+```json
 [
   {
     "id": 2371,
-    "REF_ID": "Ecological Matrix (숨쉬는 그물)",
-    "ADDR": "서울특별시 성동구 뚝섬로 273 서울숲 야외무대",
-    "NAME": "Ecological Matrix (숨쉬는 그물)",
-    "X_COORD": 37.5450455,
-    "Y_COORD": 127.0408373,
-    "TYPE": "서울은미술관",
-    "TITLE": "서울숲 야외무대",
+    "REF_ID": "예시 항목",
+    "ADDR": "예시 지역",
+    "NAME": "예시 항목",
+    "X_COORD": 10.5,
+    "Y_COORD": 20.5,
+    "TYPE": "예시 분류",
+    "TITLE": "예시 장소",
     "IMG": "",
-    "SUBJECT": "미술품"
-  },
-  ...
+    "SUBJECT": "자료"
+  }
   ]
+
 ```
 
-때문에 해당 데이터 포맷에 맞추어서, LandmarkModel이라는 struct를 Codable 프로토콜로 선언해줬습니다\.
+때문에 해당 데이터 포맷에 맞추어서, ItemModel이라는 struct를 Codable 프로토콜로 선언해줬습니다\.
 
 Codable로 선언을 해줌으로써, 서버에 있는 변수명을 struct안의 프로퍼티 변수명으로 사용할 수 있습니다\.
 
@@ -148,7 +128,7 @@ Codable로 선언을 해줌으로써, 서버에 있는 변수명을 struct안의
 
 <a class="notion-resource-card" href="https://app.quicktype.io/"><span class="notion-resource-label">링크</span><span>https://app.quicktype.io/</span></a>
 
-서버의 포맷에 따라 struct를 생성해주는 좋은 사이트가 있습니다\. \-라뮤의 꿀팁\-
+서버의 포맷에 따라 struct를 생성해주는 좋은 사이트가 있습니다\.
 
 ### 서버와의 연결
 
@@ -165,8 +145,8 @@ enum NetworkError: Error {
 
 class HTTPClient {
     
-    func getLandmark() async throws -> [LandmarkModel] {
-        guard let url = URL.getLandmarkList() else {
+    func getItem() async throws -> [ItemModel] {
+        guard let url = URL.getItemList() else {
             throw NetworkError.badURL
         }
         
@@ -176,14 +156,14 @@ class HTTPClient {
             throw NetworkError.noData
         }
         
-        let landmarkData = try JSONDecoder().decode([LandmarkModel].self, from: data)
+        let itemData = try JSONDecoder().decode([ItemModel].self, from: data)
         
-        return landmarkData
+        return itemData
     }
 }
 ```
 
-본격적으로 서버에게 request 해서 response를 가져오기 위해 만든 HTTPClient\.swift 입니다\.  
+본격적으로 서버에게 request 해서 response를 가져오기 위해 만든 HTTPClient\.swift 입니다\.
 
 서버에서 발생하는 에러를 열거형으로 정의하여 추후에 발생하는 에러가 어떤 발생했는지 바로 알 수 있습니다\.
 
@@ -200,22 +180,22 @@ class HTTPClient {
 
 ### Response해온 데이터 써먹기
 
-#### LandmarkViewModel\.swift
+#### ItemViewModel\.swift
 
 ```swift
 import Foundation
 import SwiftUI
 import MapKit
 
-class LandmarkViewModel : ObservableObject{
-    @Published var landmarks: [LandmarkModel] = [] // 배열로 변경
+class ItemViewModel : ObservableObject{
+    @Published var items: [ItemModel] = [] // 배열로 변경
     var httpClient = HTTPClient()
     
-    func getLandmarkList() async {
+    func getItemList() async {
         do {
-            let landmarkData = try await httpClient.getLandmark()
+            let itemData = try await httpClient.getItem()
             DispatchQueue.main.async {
-                self.landmarks = landmarkData // 여러 미술관 데이터를 할당
+                self.items = itemData // 여러 항목 데이터를 할당
             }
         } catch {
             print(error.localizedDescription)
@@ -224,9 +204,9 @@ class LandmarkViewModel : ObservableObject{
 }
 ```
 
-Response해온 Data를 가공하여 View에서 보여줄 정보를 추려내는 LandmarkViewModel\.swift입니다\.
+Response해온 Data를 가공하여 View에서 보여줄 정보를 추려내는 ItemViewModel\.swift입니다\.
 
-1. HTTPClient 클래스의 인스턴스를 생성하여 클래스 안의 메소드를 사용하여 landmarkData를 가져옵니다\.
+1. HTTPClient 클래스의 인스턴스를 생성하여 클래스 안의 메소드를 사용하여 itemData를 가져옵니다\.
 1. 가져온 데이터를 struct로 만들어놓았던 데이터 구조체에 넣어줍니다\.
 1. 데이터를 할당하는 작업을 메인 스레드에서 해주는 이유는 UI관련 작업이기 때문에 메인 스레드에서 해주어야 하기 때문입니다\.
 1. 가져오지 못할 경우 에러를 Catch하여 뱉어냅니다\.
@@ -235,31 +215,26 @@ Response해온 Data를 가공하여 View에서 보여줄 정보를 추려내는 
 
 ```swift
 import SwiftUI
-import MapKit
 
-struct MapView: View {
-   
-		...
-    @StateObject var landmark = LandmarkViewModel()
-    ...
-     var body: some View {
-	     section{
-		     
-	     }.task {
-			     ...
-           await landmark.getLandmarkList()
-		   }
-     }
- }
+struct ItemListView: View {
+    @StateObject private var model = ItemViewModel()
+
+    var body: some View {
+        Text("불러온 항목: \\(model.items.count)")
+            .task {
+                await model.getItemList()
+            }
+    }
+}
 ```
 
 최종적으로 서버에서 받아온 데이터를 뷰에 보여주는 View\.swift\(여기선 MapView\.swift\)입니다\.
 
-LandmarkViewModel 인스턴스를 만들어 빈 배열을 선언하고 그 배열에 데이터를 넣어주는 작업을 할 겁니다\.
+ItemViewModel 인스턴스를 만들어 빈 배열을 선언하고 그 배열에 데이터를 넣어주는 작업을 할 겁니다\.
 
-1. 뷰가 렌더링되기 전에 비동기 함수인 getLandmarkList를 호출하여 서버에서 데이터를 가져온 후 빈 배열에 넣어줍니다\.
+1. task에서 비동기로 데이터를 요청하고 결과를 게시 프로퍼티에 반영한다\.
 
-## 뉴준성의 피드백
+## 제네릭으로 응답 처리 일반화
 
 ```swift
 func getList<T: Decodable>(url: URL?) async throws -> [T] {
@@ -279,8 +254,12 @@ func getList<T: Decodable>(url: URL?) async throws -> [T] {
 }
 ```
 
-해당 코드를 사용하여 제네릭을 통해 Decodable한 타입들은 전부 받을 수 있게 변경하여 코드의 범용성을 넓히는 작업을 진행해도 좋을 것으로 생각됩니다\. 
+해당 코드를 사용하여 제네릭을 통해 Decodable한 타입들은 전부 받을 수 있게 변경하여 코드의 범용성을 넓히는 작업을 진행해도 좋을 것으로 생각됩니다\.
 
-## 모수의 피드백
+## 네트워크 의존성 교체 검토
 
 moya라는 라이브러리를 사용하여 네트워크의 통신 코드의 의존성을 느슨하게 하여, 쉽게 갈아 끼울 수 있도록 하는 것이 좋다 생각듭니다\.
+
+## 정리
+
+URL·응답 모델·HTTP 상태·디코딩 오류를 각각 확인하고 UI 반영은 메인 스레드에서 수행한다\. 반복되는 응답 처리는 Decodable 제약의 제네릭 함수로 모을 수 있으며 네트워크 라이브러리 도입은 교체할 의존 경계를 기준으로 판단한다\.
