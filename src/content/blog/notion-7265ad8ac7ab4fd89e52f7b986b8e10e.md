@@ -1,10 +1,10 @@
 ---
 schemaVersion: 2
 title: "순환 참조"
-description: "순환 참조"
+description: "이런 식으로 인스턴스는 힙 영역에 할당되고, samplePerson이란 지역 변수가 Human 인스턴스의 주소값을 할당 받기 때문에 힙 영역의 Human 인스턴스의 RC가 +1 되는 것을 ARC라고 합니다."
 tags: ["Swift", "언어 기초", "성능 최적화"]
 publishedAt: "2024-08-27T07:14:00.000Z"
-updatedAt: "2026-11-10T15:30:00.000Z"
+updatedAt: "2026-11-12T04:16:00.000Z"
 manuscriptPages: 9
 ---
 
@@ -14,15 +14,15 @@ manuscriptPages: 9
 > 
 > 참조 횟수를 계산하여 0이 되는 시점에 힙에서 자동으로 해제되는 것
 
-![](<../../assets/blog/notion-7265ad8ac7ab4fd89e52f7b986b8e10e/image-001.jpg>)
+![](<../../assets/blog/notion-7265ad8ac7ab4fd89e52f7b986b8e10e/image-001.png>)
 
-이런 식으로 인스턴스는 힙 영역에 할당되고, doran이란 지역 변수가 Human 인스턴스의 주소값을 할당 받기 때문에 힙 영역의 Human 인스턴스의 RC가 \+1 되는 것을 ` ARC `라고 합니다\.
+이런 식으로 인스턴스는 힙 영역에 할당되고, samplePerson이란 지역 변수가 Human 인스턴스의 주소값을 할당 받기 때문에 힙 영역의 Human 인스턴스의 RC가 \+1 되는 것을 ` ARC `라고 합니다\.
 
 이렇게 인스턴스의 주소값이 변수에 할당될 때 RC가 증가하면` 강한 참조 `라고 합니다\.
 
 → 별다른 선언이 없다면 default 값이 strong값인 겁니다\.
 
-따라서 위의 doran으로 생성한 인스턴스는 default인 strong으로 선언되어 ` 강한 참조 객체 `인 겁니다\.
+따라서 위의 samplePerson으로 생성한 인스턴스는 default인 strong으로 선언되어 ` 강한 참조 객체 `인 겁니다\.
 
 ## 순환 참조
 
