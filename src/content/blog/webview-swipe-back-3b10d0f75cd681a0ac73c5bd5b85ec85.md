@@ -1,22 +1,20 @@
 ---
 schemaVersion: 2
-title: "StackFlow 기반 WebView: 커스텀 Swipe-back 구현 배경과 설계"
-description: "WebView 화면의 swipe-back을 직접 구현한 배경과 설계를 정리한다. 제스처 판정, CSS 전환 마무리, 패럴랙스 렌더링, navigation lock, StackFlow pop과 네이티브 hardware back의 연결 방식을 다룬다."
+title: "WebView의 커스텀 swipe-back과 전환 경합 처리"
+description: "WebView에서 interactive swipe-back을 구현할 때는 손가락 추적과 실제 화면 스택 변경을 분리해야 한다. 완료·취소 애니메이션 중 다른 action이 들어오거나 cleanup이 발생해도 pop이 중복되거나 사라지지 않게 만드는 설계를 살펴본다."
 tags: ["React", "아키텍처", "렌더링", "성능 최적화", "CSS"]
 publishedAt: "2026-08-03T09:18:00.000Z"
-updatedAt: "2026-11-11T14:17:00.000Z"
+updatedAt: "2026-11-12T03:52:00.000Z"
 manuscriptPages: 36
 ---
 
-### 문서 목적
+WebView에서 interactive swipe\-back을 구현할 때는 손가락 추적과 실제 화면 스택 변경을 분리해야 한다\. 완료·취소 애니메이션 중 다른 action이 들어오거나 cleanup이 발생해도 pop이 중복되거나 사라지지 않게 만드는 설계를 살펴본다\.
 
-WebView 화면의 swipe\-back을 직접 구현한 배경과 설계를 정리한다\. 제스처 판정, CSS 전환 마무리, 패럴랙스 렌더링, navigation lock, StackFlow pop과 네이티브 hardware back의 연결 방식을 다룬다\.
+이 글은 제스처 판정·CSS 마무리·token lock 경합에 집중한다\. 파일명과 시간·비율·스프링 값은 구현 예시이며, 비공개 WebView 설정에 의존한 주사율 조정은 OS·기기별 확인이 필요하다\.
 
-이 구현은 처음에 앱 코드\(` shared/stackflow `\) 안에서 만들었고, 이후 런타임과 무관한 별도 패키지\(` stackflow-kit `\)로 분리했다\. 아래 내용은 분리된 패키지의 현재 구현 기준이다\.
+### 1\. 제스처와 스택 변경을 나누는 이유
 
-### 1\. 직접 구현한 배경
-
-StackFlow의 stack 상태와 action은 그대로 쓰면서 전환 동작은 세밀하게 제어해야 했다\.
+StackFlow의 stack 상태와 action은 그대로 쓰면서 전환 동작은 세밀하게 제어해야 하는 상황을 가정한다\.
 
 - 손가락 이동 거리와 화면 transform을 즉시 연결하는 interactive gesture
 - 짧고 빠른 flick과 충분히 긴 drag를 모두 완료로 판정
@@ -27,7 +25,7 @@ StackFlow의 stack 상태와 action은 그대로 쓰면서 전환 동작은 세�
 - swipe와 버튼 action이 같은 stack을 동시에 바꾸는 race condition 차단
 - Web stack의 뒤로가기 가능 여부를 Android hardware back과 공유
 
-그래서 제스처와 애니메이션은 ` useSpringSwipeBack `이, stack 변경은 StackFlow가 맡도록 나눴다\.
+그래서 제스처와 애니메이션은 ` useSpringSwipeBack `이, stack 변경은 StackFlow가 맡도록 나눈다\.
 
 ### 2\. 구현 파일과 책임
 
@@ -84,7 +82,7 @@ velocity = previousVelocity × 0.1 + currentVelocity × 0.9
 
 ### 5\. 손을 뗀 뒤 CSS 전환으로 마무리
 
-현재 소비 버전은 ` stackflow-kit 0.2.2 `\(` 4c32989 `\)다\. 드래그 중에는 JS가 손가락 위치를 반영하지만, 손을 떼면 paper·dim·뒤 화면의 원래 transition을 복원하고 목표 값만 바꾼다\.
+드래그 중에는 JS가 손가락 위치를 반영하지만, 손을 떼면 paper·dim·뒤 화면의 원래 transition을 복원하고 목표 값만 바꾼다\.
 
 <div class="notion-table-wrap">
 <table>
@@ -95,7 +93,7 @@ velocity = previousVelocity × 0.1 + currentVelocity × 0.9
 
 paper 자신의 ` transform `에 대한 ` transitionend `를 완료 신호로 쓴다\. 이벤트가 오지 않는 경우에도 결과를 전달하도록 ` STACK_TRANSITION_DURATION_MS + 100 = 450ms ` fallback을 둔다\. 확정 결과 콜백은 microtask로 넘긴다\.
 
-이전 버전은 강성 576·감쇠 48의 임계 감쇠 스프링을 120Hz 고정 step으로 JS에서 시뮬레이션했다\. 저전력 모드 등으로 WebView의 rAF가 30fps로 제한되면 손을 뗀 뒤에도 움직임이 끊겼다\. 0\.2\.2는 버튼 pop과 같은 CSS 전환을 써 마무리를 컴포지터가 그리게 바꿨다\. 속도는 flick 판정에만 쓰며 마무리 물리의 초기 속도로 전달하지 않는다\.
+대안으로 강성 576·감쇠 48의 임계 감쇠 스프링을 120Hz 고정 step으로 JS에서 시뮬레이션할 수 있다\. 하지만 저전력 모드 등에서 WebView rAF가 30fps로 제한되면 마무리 움직임이 끊길 수 있다\. 이 설계는 버튼 pop과 같은 CSS 전환으로 마무리를 넘긴다\. 속도는 flick 판정에만 쓰며 마무리 물리의 초기 속도로 전달하지 않는다\.
 
 전환 시간은 350ms이고 곡선은 강성 576·감쇠 48의 스프링을 정지 출발시킨 형태를 CSS ` linear() `로 옮긴 값이다\. ` linear() ` 미지원 환경은 ` cubic-bezier ` 근사를 쓴다\. 드래그 중 갱신은 여전히 메인 스레드 성능과 WebView 주사율의 영향을 받는다\.
 
@@ -117,7 +115,7 @@ dim opacity    = 1 - ratio
 
 뒤 화면은 ` previousElementSibling `으로 찾는다\. renderer가 stack 순서대로 형제 요소를 그리기 때문이다\. replace로 퇴장 중인 화면은 표시 속성으로 건너뛴다\. 뒤 화면 탐색은 제스처 시작 때 한 번만 하고 캐시해 매 frame DOM 탐색과 layout 읽기를 피한다\.
 
-평상시 뒤 화면 위치도 같은 비율을 쓴다\. 처음에는 ` react-ui-core `의 offset 훅에 맡겼는데, pop 때 복귀를 rAF 네 번 뒤로 미뤄 앞 화면보다 늦게 출발하며 끊겨 보였다\. 지금은 ` StackScreen `이 자기 전환과 같은 commit에서 뒤 화면 위치를 직접 바꾼다\.
+평상시 뒤 화면 위치도 같은 비율을 쓴다\. offset 훅이 뒤 화면 복귀를 여러 rAF 뒤로 미루는 구성에서는 앞 화면과 출발 시점이 달라질 수 있다\. 공통 화면 셸이 같은 commit에서 뒤 화면 위치를 바꾸면 두 전환을 맞출 수 있다\.
 
 ### 7\. StackFlow pop 확정
 
@@ -143,7 +141,7 @@ swipe 확정과 실제 pop 사이에는 CSS 전환 시간이 있다\. 이때 다
 - ` lock() `은 증가하는 token을 발급하고 즉시 ` locked: true `로 둔다\.
 - handler는 React render를 기다리지 않고 ` getState().locked `를 동기로 확인한다\.
 - ` unlock(token) `은 자신이 얻은 lock만 푼다\. 새 token이 발급되면 이전 callback의 unlock은 무시된다\.
-- 비정상 lifecycle에 대비해 fallback timer를 둔다\. ` STACK_TRANSITION_DURATION_MS + 650 `, 현재 ` 1000ms `다\. 전환 시간에서 파생하므로 전환을 늘려도 fallback이 전환 도중 lock을 풀지 않는다\.
+- 비정상 lifecycle에 대비해 fallback timer를 둔다\. ` STACK_TRANSITION_DURATION_MS + 650 `, 예시로 ` 1000ms `다\. 전환 시간에서 파생하므로 전환을 늘려도 fallback이 전환 도중 lock을 풀지 않는다\.
 
 swipe는 손을 뗀 순간 ` silent ` lock을 건다\. 일반 lock은 버튼 disabled 표시를 위해 구독 화면을 리렌더하는데, 손을 뗀 frame에 화면 전체가 리렌더되면 마무리 첫 frame이 끊겼다\. silent lock은 차단 효과는 같고 표시만 하지 않는다\.
 
@@ -172,7 +170,7 @@ touch blocker 표시는 React state가 아니라 DOM ref의 ` style.display `로
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">화면 유형</th><th scope="col">정책</th><th scope="col">이유</th></tr></thead>
-<tbody><tr><td>홈·옷장·마이페이지 같은 root 탭</td><td>차단</td><td>pop 대상이 없음</td></tr><tr><td>약관 동의</td><td>차단</td><td>동의 전 이탈 방지</td></tr><tr><td>분석 요청 처리 화면</td><td>분석 ID를 받거나 실패하기 전까지 차단</td><td>비동기 업로드·분석 요청 중단 방지</td></tr><tr><td>예시 모달·안내가 열린 화면</td><td>열린 동안 차단</td><td>모달 위에서 화면이 빠지지 않게</td></tr><tr><td>작성 중인 폼</td><td>작성 중 차단</td><td>저장하지 않고 나갈지 확인으로 돌림</td></tr><tr><td>무거운 이미지 처리 중</td><td><code>blockNavigation</code>으로 swipe·hardware back·헤더 back 모두 차단</td><td>작업 결과 유실 방지</td></tr><tr><td>일반 상세·목록</td><td>허용</td><td>일반 stack 복귀</td></tr></tbody>
+<tbody><tr><td>홈·자료 목록·계정 같은 root 탭</td><td>차단</td><td>pop 대상이 없음</td></tr><tr><td>약관 동의</td><td>차단</td><td>동의 전 이탈 방지</td></tr><tr><td>분석 요청 처리 화면</td><td>분석 ID를 받거나 실패하기 전까지 차단</td><td>비동기 업로드·분석 요청 중단 방지</td></tr><tr><td>예시 모달·안내가 열린 화면</td><td>열린 동안 차단</td><td>모달 위에서 화면이 빠지지 않게</td></tr><tr><td>작성 중인 폼</td><td>작성 중 차단</td><td>저장하지 않고 나갈지 확인으로 돌림</td></tr><tr><td>무거운 이미지 처리 중</td><td><code>blockNavigation</code>으로 swipe·hardware back·헤더 back 모두 차단</td><td>작업 결과 유실 방지</td></tr><tr><td>일반 상세·목록</td><td>허용</td><td>일반 stack 복귀</td></tr></tbody>
 </table>
 </div>
 
@@ -197,7 +195,7 @@ sequenceDiagram
     Flow->>Screen: 전환 → idle에서 unlock
 ```
 
-처음에는 Native가 ` window.history.back() `을 주입하고 history sync가 pop하게 했다\. 이 경로는 lock을 거치지 않아 전환 중 연타나 swipe와 겹칠 때 이중 pop이 생겼다\. 지금은 Native가 이벤트만 위임한다\. Native는 ` canGoBack `을 우선 쓰고, Web의 첫 메시지 전까지만 WebView navigation state를 fallback으로 쓴다\.
+Native가 window\.history\.back\(\)을 주입해 history sync가 pop하게 하면 공통 lock을 우회할 수 있다\. 전환 연타와 swipe가 겹칠 때 이중 pop을 피하려면 Native는 이벤트만 위임한다\. Native는 ` canGoBack `을 우선 쓰고, Web의 첫 메시지 전까지만 WebView navigation state를 fallback으로 쓴다\.
 
 ### 13\. Swipe 이벤트 순서
 
@@ -229,7 +227,7 @@ sequenceDiagram
 
 ### 14\. 회귀 검증 체크리스트
 
-동작 테스트는 분리된 패키지 저장소가 소유한다\(jsdom\)\. 앱 저장소에서는 adapter 배선만 테스트하고, 다음 항목은 실기기·시뮬레이터에서 확인한다\.
+동작 테스트는 공통 패키지의 jsdom 테스트로 두고 앱 저장소는 adapter 배선을 검증하는 식으로 역할을 나눌 수 있다\. 다음 항목은 실기기·시뮬레이터에서 확인한다\.
 
 - [ ] 5px 이상 빠른 flick이 pop 되는가
 - [ ] 멈췄다 떼면 flick으로 보지 않는가
@@ -245,20 +243,23 @@ sequenceDiagram
 - [ ] safe area와 AppBar가 있어도 edge 영역이 전체 높이를 유지하는가
 - [ ] ProMotion 기기에서 120Hz\(rAF/s 120\)로 그려지는가
 
-### 현재 제약
+### 적용 범위와 제약
 
 - touch 이벤트 기반이라 desktop pointer·mouse drag는 지원하지 않는다\.
 - edge 폭과 판정 임계값은 고정 상수다\.
 - 뒤 화면 탐색은 renderer의 DOM 구조와 marker에 의존한다\. StackFlow를 올리면 다시 확인한다\.
 - 전환 시간과 판정 임계값은 정적 상수이며 기기별 adaptive tuning은 없다\.
-- iOS WKWebView의 120Hz는 WebView 라이브러리 patch\(비공개 API\)에 기대므로, OS 업데이트나 patch 유실 시 60fps로 돌아갈 수 있다\. patch는 화면 최대 주사율이 60Hz를 넘는 기기에만 적용한다\. 60Hz 기기까지 적용하면 30fps로 떨어지는 회귀가 있어 조건을 추가했다\(` 0fbdc4e `\)\.
+- iOS WKWebView의 120Hz는 WebView 라이브러리 patch\(비공개 API\)에 기대므로, OS 업데이트나 patch 유실 시 60fps로 돌아갈 수 있다\. patch는 화면 최대 주사율이 60Hz를 넘는 기기에만 적용한다\. 60Hz 기기까지 적용하면 30fps로 떨어지는 회귀가 있어 조건을 추가했다\.
 
-### 참고
+### 정리
 
-- StackFlow 공식 소개
-- StackFlow 상태 사용
-- 관련 글: StackFlow 기반 WebView 내비게이션 설계, StackFlow kit 패키지 분리 배경 및 설계
+- drag는 입력 위치를, release 이후는 CSS 전환을 사용한다\.
+- 완료·취소·touchcancel·cleanup의 결과 전달을 구분한다\.
+- swipe·버튼·hardware back은 같은 token lock을 공유한다\.
+- renderer DOM·주사율·전환 곡선 의존성은 업데이트 때 회귀 검증한다\.
 
-### 구현 근거와 검토 범위
+### 관련 글
 
-2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/package.json `, ` patches/react-native-webview@13.17.0.patch `, ` docs/specs/stackflow-kit-extraction.md `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
+- StackFlow 화면 스택과 내비게이션 설계
+- StackFlow 공통 내비게이션 로직의 패키지 분리 설계
+- React 모바일 화면에 Stackflow를 도입할 때의 설계와 전환 전략
