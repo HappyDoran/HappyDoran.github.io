@@ -1,24 +1,20 @@
 ---
 schemaVersion: 2
-title: "Native-Web 브리지 계약과 보안 설계"
-description: "React Native WebView shell과 Next.js 콘텐츠 사이의 브리지 계약을 어떻게 정의하고 검증하는지 정리한다. 메시지 envelope, 계약 패키지의 소유 방식, App의 단일 라우팅 지점, Web의 전송·구독 primitive, 운영 메시지(WEB_READY·WEB_STACK_STATE·NATIVE_BACK_PRESS), 외부 URL 정책, WebView 설정, 구버전 App을 감지하는 ack 패턴을 다룬다."
+title: "Native-Web 브리지의 메시지 계약과 보안"
+description: "Native-Web 브리지는 전송 수단과 payload 검증, 네이티브 기능 실행의 권한 경계를 함께 정의해야 한다. React Native WebView와 Next.js 사이에서 공통 envelope·도메인 schema·단일 dispatch 지점을 구성하는 방법을 살펴본다."
 tags: ["React Native", "Next.js", "네트워크", "아키텍처"]
 publishedAt: "2026-11-11T14:16:00.000Z"
-updatedAt: "2026-11-11T14:17:00.000Z"
-manuscriptPages: 45
+updatedAt: "2026-11-12T03:55:00.000Z"
+manuscriptPages: 42
 ---
 
-> 표기: 프로젝트 고유 접두사는 ` {prefix} `, 패키지 scope는 ` @scope `로 바꿔 적었다\.
+Native\-Web 브리지는 전송 수단과 payload 검증, 네이티브 기능 실행의 권한 경계를 함께 정의해야 한다\. React Native WebView와 Next\.js 사이에서 공통 envelope·도메인 schema·단일 dispatch 지점을 구성하는 방법을 살펴본다\.
 
-### 문서 목적
-
-React Native WebView shell과 Next\.js 콘텐츠 사이의 브리지 계약을 어떻게 정의하고 검증하는지 정리한다\. 메시지 envelope, 계약 패키지의 소유 방식, App의 단일 라우팅 지점, Web의 전송·구독 primitive, 운영 메시지\(` WEB_READY `·` WEB_STACK_STATE `·` NATIVE_BACK_PRESS `\), 외부 URL 정책, WebView 설정, 구버전 App을 감지하는 ack 패턴을 다룬다\.
-
-아키텍처 전략 글에서 브리지 수신 순서를 짧게 다뤘다\. 이 글은 그 순서가 실제 코드에서 어디에 어떻게 구현됐는지, 그리고 저장소 harness가 무엇을 강제하는지를 더 깊게 기록한다\.
+이 글은 메시지 계약과 수신 경계에 집중한다\. 파일·패키지·이벤트 이름과 timeout은 예시이며, source 문자열이나 CustomEvent 자체가 발신자 인증을 보장하지 않는다는 한계를 전제로 한다\.
 
 ### 1\. 전체 구조
 
-브리지는 양방향이지만 전송 수단이 다르다\. web → native는 ` window.ReactNativeWebView.postMessage(JSON 문자열) `로 App ` onMessage `에 닿고, native → web은 ` injectJavaScript `가 발행하는 ` {prefix}:native-message ` CustomEvent로 Web 구독부에 닿는다\.
+브리지는 양방향이지만 전송 수단이 다르다\. web → native는 ` window.ReactNativeWebView.postMessage(JSON 문자열) `로 App ` onMessage `에 닿고, native → web은 ` injectJavaScript `가 발행하는 ` example:native-message ` CustomEvent로 Web 구독부에 닿는다\.
 
 ```mermaid
 sequenceDiagram
@@ -44,7 +40,7 @@ sequenceDiagram
 모든 메시지는 같은 envelope로 감싼다\. 정의는 ` packages/shared/src/bridge.ts ` 하나뿐이다\.
 
 ```typescript
-export const BRIDGE_EVENT_NAME = '{prefix}:native-message';
+export const BRIDGE_EVENT_NAME = 'example:native-message';
 export const NATIVE_BACK_PRESS = 'native:back-press';
 
 export const bridgeMessageSchema = z.object({
@@ -78,7 +74,7 @@ envelope schema는 ` payload `를 ` unknown `으로 둔다\. envelope 단계에�
 }
 ```
 
-소비 쪽은 ` @scope/shared/safe-area `처럼 필요한 도메인만 import한다\. 패키지는 빌드 산출물 없이 TypeScript 원본을 그대로 export하고, 런타임 의존성은 ` zod ` 하나다\.
+소비 쪽은 ` @example/shared/safe-area `처럼 필요한 도메인만 import한다\. 패키지는 빌드 산출물 없이 TypeScript 원본을 그대로 export하고, 런타임 의존성은 ` zod ` 하나다\.
 
 #### README가 계약 인덱스
 
@@ -86,7 +82,7 @@ envelope schema는 ` payload `를 ` unknown `으로 둔다\. envelope 단계에�
 
 #### harness가 강제하는 것
 
-문서와 코드가 어긋나지 않도록 ` scripts/check-repository-harness.mjs `가 두 가지를 검사한다\.
+문서와 코드가 어긋나지 않도록 ` scripts/example-check-contracts.mjs `가 두 가지를 검사한다\.
 
 ` findContractIndexErrors `는 ` packages/shared/src/*.ts `\(index 제외\)에서 ` export const UPPER_CASE = '문자열' ` 형태의 token을 모두 뽑고, README에 백틱으로 감싼 같은 이름이 없으면 실패한다\. 새 token을 만들고 인덱스를 빠뜨리면 검사가 잡는다\.
 
@@ -105,7 +101,7 @@ if (!contractIndex.includes(`\`${token}\``)) {
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">파일</th><th scope="col">marker</th></tr></thead>
-<tbody><tr><td><code>app/src/features/webview/lib/bridge.ts</code></td><td><code>bridgeMessageSchema.safeParse</code></td></tr><tr><td><code>app/src/features/webview/hooks/use-webview-controller.ts</code></td><td><code>stackStatePayloadSchema.safeParse</code>, <code>webReadyPayloadSchema.safeParse</code></td></tr><tr><td><code>app/src/features/cutout-test/api/cutout.request.ts</code></td><td><code>cutoutRequestSchema.safeParse</code></td></tr><tr><td><code>app/src/features/cutout-test/api/inpaint.request.ts</code></td><td><code>inpaintRequestSchema.safeParse</code>, <code>inpaintModelRequestSchema.safeParse</code></td></tr><tr><td><code>app/src/features/cutout-test/api/media.request.ts</code></td><td><code>cutoutMediaRequestSchema.safeParse</code></td></tr><tr><td><code>web/src/shared/bridge/lib/post-message.ts</code></td><td><code>bridgeMessageSchema.safeParse</code></td></tr></tbody>
+<tbody><tr><td><code>app/src/features/webview/lib/bridge.ts</code></td><td><code>bridgeMessageSchema.safeParse</code></td></tr><tr><td><code>app/src/features/webview/hooks/use-webview-controller.ts</code></td><td><code>stackStatePayloadSchema.safeParse</code>, <code>webReadyPayloadSchema.safeParse</code></td></tr><tr><td><code>app/src/features/image-editor/api/cutout.request.ts</code></td><td><code>cutoutRequestSchema.safeParse</code></td></tr><tr><td><code>app/src/features/image-editor/api/inpaint.request.ts</code></td><td><code>inpaintRequestSchema.safeParse</code>, <code>inpaintModelRequestSchema.safeParse</code></td></tr><tr><td><code>app/src/features/image-editor/api/media.request.ts</code></td><td><code>cutoutMediaRequestSchema.safeParse</code></td></tr><tr><td><code>web/src/shared/bridge/lib/post-message.ts</code></td><td><code>bridgeMessageSchema.safeParse</code></td></tr></tbody>
 </table>
 </div>
 
@@ -171,7 +167,7 @@ Web 쪽 범용 브리지는 ` web/src/shared/bridge/** `에 있다\. ` lib/post-
 
 #### ` message ` 이벤트를 열지 않는다
 
-` subscribeNativeMessages `는 ` {prefix}:native-message ` CustomEvent만 구독한다\.
+` subscribeNativeMessages `는 ` example:native-message ` CustomEvent만 구독한다\.
 
 ```typescript
 // native→web은 injectJavaScript가 발행하는 CustomEvent(BRIDGE_EVENT_NAME)로만 전달됩니다.
@@ -185,7 +181,7 @@ const handleCustomMessage = (event: Event) => {
 window.addEventListener(BRIDGE_EVENT_NAME, handleCustomMessage);
 ```
 
-초기에는 ` window `의 ` message ` 리스너도 함께 열려 있었다\. 리뷰에서 origin 검증이 없는 이 리스너로 외부 페이지가 back\-press나 auth 같은 native 메시지를 위조할 수 있다는 점이 지적됐고, 리스너를 제거했다\. CustomEvent ` detail `은 객체와 JSON 문자열을 모두 받되, 어느 쪽이든 ` bridgeMessageSchema `를 통과해야 한다\.
+origin 검증 없는 window message 리스너는 외부 iframe·opener에서 온 메시지까지 수신할 수 있다\. 사용하지 않는 수신 경로는 열지 않는다\. CustomEvent ` detail `은 객체와 JSON 문자열을 모두 받되, 어느 쪽이든 ` bridgeMessageSchema `를 통과해야 한다\.
 
 구독 primitive의 동작은 integration 테스트가 고정한다\. envelope 통과 메시지 전달, ` source `가 ` native `가 아니면 폐기, schema 불일치 폐기, 깨진 JSON 폐기, unsubscribe 후 미수신, ` ReactNativeWebView ` 부재 시 ` false ` 반환을 확인한다\.
 
@@ -230,7 +226,7 @@ return true;
 
 ### 7\. 외부 URL 정책
 
-외부 링크 열기는 브리지 메시지가 아니라 WebView의 navigation 가로채기가 처리한다\. 예전에 있던 외부 URL 열기 브리지 token은 쓰이지 않아 제거했고, 가로채기 경로만 남겼다\.
+외부 링크 열기는 브리지 메시지가 아니라 WebView의 navigation 가로채기가 처리한다\. 같은 역할의 브리지 token을 중복 운영하지 않고 navigation 가로채기에 책임을 모은다\.
 
 ```typescript
 const handleShouldStartLoad = (navigation: WebViewNavigation) => {
@@ -275,7 +271,7 @@ export async function openExternalUrl(value: string) {
 </table>
 </div>
 
-줌은 App 설정만으로 끝내지 않았다\. Web viewport를 ` maximumScale: 1 `, ` userScalable: false `로 두고, ` html, body `에 ` touch-action: pan-x pan-y `를 걸어 더블 탭과 핀치 확대를 함께 막는다\.
+줌 정책을 App과 Web 양쪽에 적용하는 구성 예시는 다음과 같다\. Web viewport를 ` maximumScale: 1 `, ` userScalable: false `로 두고, ` html, body `에 ` touch-action: pan-x pan-y `를 걸어 더블 탭과 핀치 확대를 함께 막는다\.
 
 iOS cookie 공유는 HttpOnly persistent 인증 cookie를 iOS cookie store와 공유해, WebView를 닫았다 다시 들어와도 세션 기반 인증이 복원되게 하려고 켰다\.
 
@@ -291,9 +287,9 @@ Web은 응답을 ` nativeAuthCapabilitiesSchema `로 검증한 뒤 쓴다\. 응�
 
 ### 10\. 구버전 App 감지: ack 패턴
 
-브리지 요청은 App에 handler가 없으면 조용히 버려진다\. 누끼 기능을 추가했을 때 이 문제가 드러났다\. handler가 없는 구버전 App에 요청하면 Web의 busy overlay가 전체 timeout\(최대 4~5분\) 동안 화면을 잠갔다\.
+브리지 요청은 App에 handler가 없으면 조용히 버려진다\. 처리 시간이 긴 이미지 기능에 ack가 없으면 handler가 없는 구버전에서도 전체 timeout 동안 busy overlay가 유지될 수 있다\.
 
-그래서 수신 확인\(ack\)을 분리했다\. App은 ` REQUEST_CUTOUT `·` REQUEST_CUTOUT_MEDIA `·` REQUEST_INPAINT `·` REQUEST_INPAINT_MODEL `을 schema로 검증한 직후 ` CUTOUT_ACK `를 보낸다\. Web은 요청 공통 대기 함수 하나\(` native-request.request.ts `\)에서 두 개의 timer를 건다\.
+이를 피하려면 수신 확인\(ack\)을 실행 완료와 분리한다\. App은 ` REQUEST_CUTOUT `·` REQUEST_CUTOUT_MEDIA `·` REQUEST_INPAINT `·` REQUEST_INPAINT_MODEL `을 schema로 검증한 직후 ` CUTOUT_ACK `를 보낸다\. Web은 요청 공통 대기 함수 하나\(` native-request.request.ts `\)에서 두 개의 timer를 건다\.
 
 ```typescript
 const ACK_TIMEOUT_MS = 3_000;
@@ -323,32 +319,31 @@ if (!postMessageToNative(request.type, request.payload)) fail(request.unavailabl
 
 결과와 ack 모두 요청마다 UUID ` requestId `로 매칭하므로, 동시에 여러 요청이 오가도 다른 요청의 응답을 잘못 받지 않는다\.
 
-### 개발 서버 가짜 native와 실제 브리지의 구분
+### 개발용 대체 구현과 실제 브리지
 
-` shared/bridge/lib/fake-native.ts `는 개발 서버에서 ` ?fakeNative=1|fail|cancel `로 활성화하고 ` ?fakeNative=0 `으로 해제한다\. 모드는 localStorage에 남는다\. 실제 WebView 안에서는 설치하지 않으며 호출부의 ` NODE_ENV ` 분기로 운영 번들에서 제외한다\.
+개발 서버에서는 성공·실패·취소 응답을 만드는 대체 adapter를 둘 수 있다\. 실제 WebView에서는 설치하지 않고 운영 번들에서도 제외한다\. 대체 응답도 같은 Zod schema와 CustomEvent 경로를 통과시키면 Web 소비부를 검증할 수 있다\.
 
-가짜 응답도 도메인 Zod schema를 통과시킨 뒤 동일 CustomEvent로 보내므로 Web 소비부의 성공·실패·취소 경로를 확인할 수 있다\. Google은 실제 idToken을 받아 서버 인증에 사용하지만, 위치·safe area·기타 가짜 응답은 네이티브 SDK와 권한 검증을 대체하지 않는다\. 포즈 촬영은 흉내 내지 않고 브라우저의 실제 사진 선택·검출·조정 경로를 사용한다\.
+그러나 대체 응답은 네이티브 SDK·권한·기기 동작 검증이 아니다\. 실제 브라우저 파일 선택·검출·조정 경로가 있다면 가짜 캡처 payload와 구분한다\. 로그인 provider의 실제 token을 사용하는 경로와 나머지 대체 응답도 따로 표시한다\.
 
-CBT 기기 정보에는 ` REQUEST_AUTH_DEVICE `·` AUTH_DEVICE `가 추가되었다\. App 밖 브라우저와 가짜 native의 기기 코드 정책은 다르다\. 일반 브라우저는 요청마다 새 코드를 만들고 가짜 native는 저장된 가짜 기기 코드를 재사용한다\.
+### 검증과 보안의 한계
 
-### 현재 제약
-
-- envelope의 ` source `는 보낸 쪽이 스스로 적는 값이다\. 상대 런타임 구분용이며 인증 수단은 아니다\. 실제 방어는 ` message ` 리스너 제거와 navigation origin 제한에 기댄다\.
+- envelope의 ` source `는 보낸 쪽이 스스로 적는 값이다\. 상대 런타임 구분용이며 인증 수단은 아니다\. 별도로 message 수신 경로와 navigation origin을 제한해야 하며 같은 출처 스크립트도 고려해야 한다\.
 - ` timestamp `는 envelope에 있지만 수신 쪽에서 검증·사용하지 않는다\.
 - harness의 trust boundary 검사는 marker 문자열 포함 여부만 본다\. 검증 결과를 실제로 쓰는지까지는 확인하지 않는다\.
 - 계약 인덱스 검사는 문자열 상수 token만 잡는다\. 숫자 상수나 schema 이름 누락은 잡지 않는다\.
-- ack 패턴은 누끼·앨범·지우개 요청에만 적용했다\. 다른 도메인 요청에는 수신 확인 단계가 없다\.
+- ack 도입 범위를 요청별 계약에 명시한다\. 이미지 처리 요청에 ack가 있다고 다른 도메인 요청에도 수신 확인이 있다고 가정하지 않는다\.
 
-### 참고
+### 정리
 
-- 관련 글: 프론트엔드 아키텍처 전략, StackFlow 기반 WebView 내비게이션 설계, 커스텀 Swipe\-back 구현 배경과 설계, Safe Area와 바운스 배경색 동기화
+- envelope 형식과 도메인 payload 의미를 각각 검증한다\.
+- token·schema는 한 곳이, 전송·dispatch·실행은 각 경계가 소유한다\.
+- 리로드 복구·hardware back·외부 URL을 같은 정책으로 연결한다\.
+- ack와 완료 timeout을 나누고 requestId로 응답을 연결한다\.
+- marker 검사와 개발용 대체 응답의 검증 한계를 명시한다\.
 
-### 구현 근거와 검토 범위
+### 관련 글
 
-2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` packages/shared/README.md `, ` web/src/shared/bridge/lib/fake-native.ts `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
-
-### 관련 구현 문서
-
-[Next\.js API route를 BFF로 둔 인증 설계](<https://app.notion.com/p/4150d0f75cd68132974dfd5fed689c7d>)
-
-[WebView 앱의 네이티브 포즈 카메라 설계](<https://app.notion.com/p/4150d0f75cd68154a2f0da3ae8aa9fcd>)
+- Next\.js BFF의 HttpOnly cookie 인증 설계
+- StackFlow 화면 스택과 내비게이션 설계
+- WebView의 Safe Area와 바운스 배경색 동기화
+- WebView의 네이티브 keypoint 카메라와 좌표 계약
