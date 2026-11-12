@@ -4,7 +4,7 @@ title: "assert와 guard"
 description: "애플리케이션이 동작 도중에 생성하는 다양한 연산 결과값을 동적으로 활동하고 안전하게 처리할 수 있도록 확인하고 빠르게 처리 가능"
 tags: ["Swift", "언어 기초"]
 publishedAt: "2024-08-27T07:31:00.000Z"
-updatedAt: "2026-11-10T15:31:00.000Z"
+updatedAt: "2026-11-12T04:17:00.000Z"
 manuscriptPages: 2
 ---
 
@@ -69,5 +69,5 @@ func someFunction(info: [String: Any]) {
 }
 someFunction(info: ["name": "jenny", "age": "10"])
 someFunction(info: ["name": "mike"])
-someFunction(info: ["name": "yagom", "age": 10]) // yagom: 10
+someFunction(info: ["name": "alex", "age": 10]) // alex: 10
 ```
