@@ -1,18 +1,16 @@
 ---
 schemaVersion: 2
-title: "WebView 하이브리드 앱의 프론트엔드 아키텍처 전략"
-description: "React Native WebView shell과 Next.js 콘텐츠를 한 저장소에서 함께 운영하면서 적용한 아키텍처를 정리한다. 런타임 경계, 소스 의존 방향, 공통 패키지, native adapter, Native-Web bridge와 API 계약, 상태 관리, 검증 기준을 다룬다."
+title: "React Native WebView와 Next.js의 런타임·기능 경계 설계"
+description: "React Native WebView shell과 Next.js 콘텐츠를 함께 운영할 때는 런타임 경계와 기능 소유권을 먼저 정해야 한다. 플랫폼 기능·화면·서버 요청을 분리하면서 공통 계약으로 연결하는 아키텍처를 살펴본다."
 tags: ["React Native", "Next.js", "아키텍처", "상태 관리"]
 publishedAt: "2026-08-03T08:49:00.000Z"
-updatedAt: "2026-11-11T14:17:00.000Z"
+updatedAt: "2026-11-12T03:50:00.000Z"
 manuscriptPages: 35
 ---
 
-### 문서 목적
+React Native WebView shell과 Next\.js 콘텐츠를 함께 운영할 때는 런타임 경계와 기능 소유권을 먼저 정해야 한다\. 플랫폼 기능·화면·서버 요청을 분리하면서 공통 계약으로 연결하는 아키텍처를 살펴본다\.
 
-React Native WebView shell과 Next\.js 콘텐츠를 한 저장소에서 함께 운영하면서 적용한 아키텍처를 정리한다\. 런타임 경계, 소스 의존 방향, 공통 패키지, native adapter, Native\-Web bridge와 API 계약, 상태 관리, 검증 기준을 다룬다\.
-
-> 표기: 프로젝트 고유 접두사는 ` {prefix} `, 내부 패키지 scope는 ` @scope `로 바꿔 적었다\.
+이 글은 전체 책임 지도를 다룬다\. 각 기능의 구체 구현은 관련 글로 분리하며, 디렉터리·이벤트·변수명·범위 값은 구성 예시다\.
 
 ### 1\. 기술 목표
 
@@ -28,7 +26,7 @@ React Native WebView shell과 Next\.js 콘텐츠를 한 저장소에서 함께 �
 <div class="notion-table-wrap">
 <table>
 <thead><tr><th scope="col">런타임</th><th scope="col">책임</th></tr></thead>
-<tbody><tr><td>React Native App</td><td>WebView host, 소셜 로그인 SDK, 위치, safe area, pose camera, 이미지 분할·인페인팅 실행, hardware back, 외부 URL 처리, 바이너리 업로드</td></tr><tr><td>Next.js Web</td><td>Activity UI, StackFlow 내비게이션, API route(BFF), 서버 상태, native bridge 소비</td></tr><tr><td>Native iOS</td><td>UIKit, AVFoundation, Vision, ONNX Runtime 기반 platform adapter</td></tr><tr><td>Native Android</td><td>View System, CameraX, ML Kit(pose·subject segmentation), ONNX Runtime 기반 platform adapter</td></tr><tr><td><code>packages/shared</code></td><td>App·Web이 함께 쓰는 bridge token, payload schema, 추론 타입</td></tr><tr><td><code>packages/design-system</code></td><td>Web 공통 UI primitive, SVG React component, 색상 token, Storybook</td></tr><tr><td>외부 <code>stackflow-kit</code></td><td>navigation lock, 안전한 action, 스프링 swipe-back, screen lifecycle</td></tr><tr><td>루트 workspace</td><td>pnpm workspace, 단일 lockfile, Turborepo task orchestration</td></tr></tbody>
+<tbody><tr><td>React Native App</td><td>WebView host, 소셜 로그인 SDK, 위치, safe area, keypoint 카메라, 이미지 분할·인페인팅 실행, hardware back, 외부 URL 처리, 바이너리 업로드</td></tr><tr><td>Next.js Web</td><td>Activity UI, StackFlow 내비게이션, API route(BFF), 서버 상태, native bridge 소비</td></tr><tr><td>Native iOS</td><td>UIKit, AVFoundation, Vision, ONNX Runtime 기반 platform adapter</td></tr><tr><td>Native Android</td><td>View System, CameraX, ML Kit(pose·subject segmentation), ONNX Runtime 기반 platform adapter</td></tr><tr><td><code>packages/shared</code></td><td>App·Web이 함께 쓰는 bridge token, payload schema, 추론 타입</td></tr><tr><td><code>packages/design-system</code></td><td>Web 공통 UI primitive, SVG React component, 색상 token, Storybook</td></tr><tr><td>외부 <code>navigation-core</code></td><td>navigation lock, 안전한 action, 스프링 swipe-back, screen lifecycle</td></tr><tr><td>루트 workspace</td><td>pnpm workspace, 단일 lockfile, Turborepo task orchestration</td></tr></tbody>
 </table>
 </div>
 
@@ -37,10 +35,10 @@ React Native WebView shell과 Next\.js 콘텐츠를 한 저장소에서 함께 �
   ├─ auth / location / safe-area / pose-camera / cutout native adapters
   ├─ WebView controller: envelope 검증 → feature handler 위임
   └─ hardware back → Web으로 이벤트 위임
-          │   (@scope/shared 계약으로 양방향 검증)
+          │   (@example/shared 계약으로 양방향 검증)
           ▼
 [Next.js WebView Content]
-  ├─ StackFlow Activity (stackflow-kit + Web adapter)
+  ├─ StackFlow Activity (navigation-core + Web adapter)
   ├─ feature state / query / schema
   ├─ API route (HttpOnly cookie 인증 proxy)
   └─ generic HTTP client
@@ -49,11 +47,11 @@ React Native WebView shell과 Next\.js 콘텐츠를 한 저장소에서 함께 �
 [External HTTP APIs and object storage]
 ```
 
-#### 일반 브라우저와 현재 인증 진입
+#### 일반 브라우저와 기능별 진입 경계
 
-App 밖에서도 사진 선택·MediaPipe 포즈 검출·9점 조정으로 같은 캡처 계약을 만들고, 메모리 사진을 사전서명 URL로 직접 PUT할 수 있다\. 네이티브 실시간 카메라·권한 처리는 App에 남는다\. 일반 브라우저 내비게이션은 앱 adapter가 ` animate: false `로 처리한다\.
+App 밖에서도 사진 선택·MediaPipe 포즈 검출·N개 keypoint 조정으로 같은 캡처 계약을 만들고, 메모리 사진을 사전서명 URL로 직접 PUT할 수 있다\. 네이티브 실시간 카메라·권한 처리는 App에 남는다\. 일반 브라우저 내비게이션은 앱 adapter가 ` animate: false `로 처리한다\.
 
-현재 CBT 비로그인 진입은 초대 코드다\. 소셜 로그인·약관 코드는 복귀용으로 유지하되 운영 홈에서는 숨긴다\. 분석 아카이빙은 대표 지정·선택 삭제를 지원하고, 비로그인 공유 페이지는 별도 서버 컴포넌트가 공개 API를 소비한다\.
+인증 진입 UI와 공개 결과 조회는 별도 책임으로 나눈다\. 분석 내역의 대표 지정·선택 삭제는 로그인 리소스 정책을 따르고, 공개 공유는 별도 서버 페이지에서 공개 API만 소비하도록 구성한다\.
 
 ### 3\. Mono\-repo 경계
 
@@ -102,7 +100,7 @@ feature끼리는 상대 slice의 공개 진입점\(` index.ts `, 서버 전용�
 </table>
 </div>
 
-두 런타임이 같은 계약을 검증해야 하므로 cross\-runtime 도메인 계약만 패키지로 올렸다\. 한 런타임에서만 쓰는 도메인 개념은 해당 feature에 남긴다\.
+두 런타임이 같은 계약을 검증해야 하므로 cross\-runtime 도메인 계약만 공통 패키지로 올린다\. 한 런타임에서만 쓰는 도메인 개념은 해당 feature에 남긴다\.
 
 ### 5\. Web 구조
 
@@ -113,7 +111,7 @@ web/src/
 │  ├─ api/                   # 인증 proxy, 공개 API, /api/protected/* 보호 API
 │  ├─ app-providers.tsx
 │  └─ layout.tsx
-├─ features/                 # auth, home, body-analysis, closet, my-page, pose-camera, safe-area, bottom-tabs …
+├─ features/                 # auth, home, image-analysis, assets, account, pose-camera, safe-area, bottom-tabs …
 ├─ shared/                   # api, bridge, stackflow adapter, components, lib, schemas
 ├─ middleware.ts             # 보호 경로 guard, 요청 경로 전달
 └─ public/                   # 도메인별 정적 asset
@@ -121,14 +119,14 @@ web/src/
 
 catch\-all route는 StackFlow ` <Stack /> `만 렌더링한다\. Activity와 route·plugin 등록은 app layer에서 조립하고, 실제 화면 UI는 feature가 소유한다\. 하나의 Activity가 여러 feature를 조합하면 ` app/[[...stack]]/stackflow/activities `에 둔다\.
 
-범용 HTTP 인프라는 ` shared/api `, 도메인 요청은 ` features/{feature}/api `에 둔다\. 과거에 어댑터 교체용으로 두었던 ` apis `, ` services ` 같은 예외 폴더는 정리했고, 지금은 구조 검사 스크립트가 ` apis `·` queries `·` services `·` config `·` interfaces `·` errors `·` model ` 폴더 자체를 막는다\.
+범용 HTTP 인프라는 ` shared/api `, 도메인 요청은 ` features/{feature}/api `에 둔다\. 요청 책임이 여러 폴더로 갈라지지 않게 api를 공개 규칙으로 정하고, 허용 폴더와 import 방향을 구조 검사로 연결한다\.
 
 ### 6\. App 구조
 
 ```text
 app/src/
 ├─ app/                      # App.tsx: SafeAreaProvider, StatusBar, WebViewScreen 마운트
-├─ features/                 # auth, cutout-test, location, pose-camera, safe-area, webview
+├─ features/                 # auth, image-editor, location, pose-camera, safe-area, webview
 └─ shared/                   # 앱 버전 상수, 전역 ambient 타입
 ```
 
@@ -146,9 +144,9 @@ Model/{Domain}    → native 내부 모델과 bridge 결과 모델
 View/{Domain}     → native UI와 직접 상호작용
 ```
 
-bootstrap 클래스는 등록과 lifecycle 전달만 맡는다\. 카메라 session 운영을 Bridge나 View에 넣지 않는다\. ` Features/ `, ` Platform/ ` 같은 디렉터리는 구조 검사가 막는다\.
+bootstrap 클래스는 등록과 lifecycle 전달만 맡는다\. 카메라 session 운영을 Bridge나 View에 넣지 않는다\. ` Features/ `, ` Platform/ ` 같은 디렉터리를 별도 layer로 추가하기 전에 플랫폼 책임과 중복되는지 확인한다\.
 
-pose camera처럼 RN native view의 명령·이벤트 이름을 세 언어가 공유해야 하는 계약은 JSON 원본 하나에서 TypeScript·Kotlin·Swift 상수를 생성하고, 생성물이 원본과 어긋나면 구조 검사가 실패한다\.
+keypoint 카메라처럼 RN native view의 명령·이벤트 이름을 세 언어가 공유해야 하는 계약의 예시는 JSON 원본 하나에서 TypeScript·Kotlin·Swift 상수를 생성하고, 생성물이 원본과 어긋나면 구조 검사가 실패한다\.
 
 ### 8\. Native\-Web Bridge
 
@@ -168,7 +166,7 @@ type BridgeMessage<TPayload = unknown> = {
 </table>
 </div>
 
-native → web 메시지는 ` {prefix}:native-message ` CustomEvent로만 전달한다\. Web은 ` window `의 ` message ` 이벤트를 열지 않는다\. origin을 위조한 ` postMessage `가 들어올 공격면을 처음부터 없애기 위해서다\.
+native → web 메시지는 ` example:native-message ` CustomEvent로만 전달한다\. Web은 ` window `의 ` message ` 이벤트를 열지 않는다\. 범용 message 수신 경로를 줄이기 위해서다\. 이후 envelope·source·payload 검증도 함께 수행한다\.
 
 수신 순서:
 
@@ -203,17 +201,17 @@ App은 Web이 보내는 ` web:stack-state.canGoBack `을 기준으로 이벤트�
 - refresh가 거부되면 ` 401 SESSION_EXPIRED `로 정규화하고 cookie와 query cache의 공개 세션을 함께 지운다\. 일시 오류\(5xx, 네트워크\)는 cookie를 지우지 않고 오류를 전달한다\.
 - 백엔드 시각에 timezone이 없으면 공통 schema가 UTC로 확정해 정규화한다\.
 
-OpenAPI 생성기\(` @hey-api/openapi-ts `\)는 설정만 준비해 두었다\. 백엔드 스펙이 상태 enum과 응답 구조를 확정하기 전까지는 feature의 수기 Zod schema가 계약을 소유한다\.
+OpenAPI 생성 코드를 사용하려면 상태 enum과 응답 구조가 확정돼야 한다\. 그 전에는 feature의 수기 Zod schema를 명시적인 계약으로 관리하고, 생성기로 전환할 때 실제 응답과 대조한다\.
 
 ### 10\. Safe Area와 layout
 
 Native ` SafeAreaView `는 좌우 inset만 처리한다\. top/bottom inset은 Web이 직접 다룬다\.
 
-1. App이 콘텐츠 로드 전에 ` window.__{PREFIX}_INITIAL_SAFE_AREA__ ` 전역을 주입한다\.
-1. Web ` <head> `의 동기 bootstrap script가 이 값\(없으면 localStorage 캐시\)을 CSS 변수 ` -{prefix}-safe-area-top/bottom `에 반영한다\. 첫 페인트 깜빡임을 막기 위해서다\.
+1. App이 콘텐츠 로드 전에 ` window.__EXAMPLE_INITIAL_SAFE_AREA__ ` 전역을 주입한다\.
+1. Web ` <head> `의 동기 bootstrap script가 이 값\(없으면 localStorage 캐시\)을 CSS 변수 ` -example-safe-area-top/bottom `에 반영한다\. 첫 페인트 깜빡임을 막기 위해서다\.
 1. 회전·포그라운드 복귀 등으로 값이 바뀌면 ` native:safe-area ` 이벤트로 다시 보낸다\.
 
-bootstrap script는 zod를 쓸 수 없어 타입·범위\(0~120\)를 직접 검증한다\. 화면 외곽은 ` Layout.Content `·` Layout.Bottom `의 ` safeAreaVariant `로 지정하고, ` StackScreen `은 AppBar 높이와 safe\-area top을 합산해 콘텐츠 offset을 계산한다\.
+bootstrap script는 zod를 쓸 수 없어 타입·범위\(예시 0~120\)를 직접 검증한다\. 화면 외곽은 ` Layout.Content `·` Layout.Bottom `의 ` safeAreaVariant `로 지정하고, ` StackScreen `은 AppBar 높이와 safe\-area top을 합산해 콘텐츠 offset을 계산한다\.
 
 비슷한 맥락으로 Web은 화면 맨 위의 불투명 배경색이 바뀔 때마다 ` web:page-background `를 보내고, App은 그 색을 WebView 바탕\(위·아래 바운스 영역\)에 쓴다\.
 
@@ -221,7 +219,7 @@ bootstrap script는 zod를 쓸 수 없어 타입·범위\(0~120\)를 직접 검�
 
 App과 Web은 ` local `, ` dev `, ` prd ` 환경 파일을 각각 로드한다\. 환경 파일은 Git에 넣지 않고 팀 secret manager 값으로 로컬에서 만든다\. App 환경 값은 ` react-native-config `로 빌드 시점에 바인딩되므로 바꾸면 재빌드해야 한다\.
 
-Web은 OpenNext로 Cloudflare Workers에 배포한다\. 자동 배포는 dev 환경만 구현했다\. prd 실행·빌드 명령이 있더라도 production 배포가 구현됐다는 뜻은 아니며, 독립 배포 전까지 prd는 dev Web/API에 연결한다\.
+Web 배포 대상으로 OpenNext·Cloudflare Workers를 선택할 수 있다\. 실행·빌드 명령과 자동 배포 파이프라인은 별개이므로 local·dev·prd의 Web·API 주소와 배포 범위를 함께 문서화한다\.
 
 ### 12\. 검증 기준
 
@@ -247,6 +245,18 @@ pnpm run build
 - [ ] hardware back·swipe·버튼 pop이 같은 lock 경로를 지나는가
 - [ ] 문서의 완료 상태와 실제 구현\(mock 여부, 배포 범위\)이 일치하는가
 
-### 구현 근거와 검토 범위
+### 정리
 
-2026\-11\-11, FE commit ` 645a584 ` 기준으로 코드·설정과 관련 변경 이력을 대조했다\. 근거: ` web/src/app/layout.tsx `, ` web/src/shared/stackflow/hooks/use-stack-navigation.ts `, ` web/src/features/auth/README.md `\. 문서에 인용한 이전 검증 기록과 이번 검토를 구분하며, 이번 작업에서 앱·브라우저 런타임 테스트를 재실행하지 않았다\.
+- 네이티브 기능 실행과 Web UI·서버 상태의 소유권을 나눈다\.
+- 공통 계약·범용 transport·feature handler를 분리한다\.
+- 인증·파일·화면 전환의 신뢰 경계를 타입과 런타임 검증으로 연결한다\.
+- 자동 검사 범위와 플랫폼·배포 검증 범위를 구분한다\.
+
+### 관련 글
+
+- React Native·Next\.js에서 축소형 FSD의 책임과 의존 경계 정하기
+- pnpm 모노레포의 workspace와 축소형 FSD 구현
+- Native\-Web 브리지의 메시지 계약과 보안
+- Next\.js BFF의 HttpOnly cookie 인증 설계
+- WebView의 Safe Area와 바운스 배경색 동기화
+- WebView 하이브리드 앱의 테스트 계층과 검증 경계
